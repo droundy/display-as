@@ -38,16 +38,36 @@ impl Format for HTML {
         s.to_string()
     }
 }
-impl DisplayAs<HTML> for str {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        (&HTML::escape(self) as &Display).fmt(f)
-    }
-}
 impl DisplayAs<HTML> for String {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         (&HTML::escape(&self) as &Display).fmt(f)
     }
 }
+macro_rules! display_as_from_display {
+    ($format:ty, $type:ty) => {
+        impl DisplayAs<$format> for $type {
+            fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+                (&self as &Display).fmt(f)
+            }
+        }
+    }
+}
+macro_rules! display_as_primitives {
+    ($format:ty) => {
+        display_as_from_display!($format, i8);
+        display_as_from_display!($format, u8);
+        display_as_from_display!($format, i16);
+        display_as_from_display!($format, u16);
+        display_as_from_display!($format, i32);
+        display_as_from_display!($format, u32);
+        display_as_from_display!($format, i64);
+        display_as_from_display!($format, u64);
+        display_as_from_display!($format, i128);
+        display_as_from_display!($format, u128);
+    }
+}
+display_as_from_display!(HTML, str);
+display_as_primitives!(HTML);
 
 #[cfg(test)]
 mod tests {
