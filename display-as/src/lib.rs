@@ -40,7 +40,12 @@ impl Format for HTML {
 }
 impl DisplayAs<HTML> for str {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        HTML::escape(self).fmt(f)
+        (&HTML::escape(self) as &Display).fmt(f)
+    }
+}
+impl DisplayAs<HTML> for String {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        (&HTML::escape(&self) as &Display).fmt(f)
     }
 }
 
