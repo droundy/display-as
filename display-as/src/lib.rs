@@ -34,8 +34,24 @@ impl<F: Format, T: DisplayAs<F>> Display for As<F,T> {
 /// Format as HTML.
 pub struct HTML;
 impl Format for HTML {
-    fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {
-        (&s as &Display).fmt(f)
+    fn escape(f: &mut Formatter, mut s: &str) -> Result<(), Error> {
+        let badstuff = "<>&\"'/";
+        while let Some(idx) = s.find(|c| badstuff.contains(c)) {
+            let (first, rest) = s.split_at(idx);
+            let (badchar, tail) = rest.split_at(1);
+            f.write_str(first)?;
+            f.write_str(match badchar {
+                "<" => "&lt;",
+                ">" => "&gt;",
+                "&" => "&amp;",
+                "\"" => "&quot;",
+                "'" => "&#x27;",
+                "/" => "&#x2f;",
+                _ => unreachable!(),
+            })?;
+            s = tail;
+        }
+        f.write_str(s)
     }
 }
 /// Format as rust code.
@@ -53,6 +69,11 @@ macro_rules! display_as_from_escape {
             }
         }
         impl DisplayAs<$format> for str {
+            fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+                $format::escape(f, self)
+            }
+        }
+        impl<'a> DisplayAs<$format> for &'a str {
             fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
                 $format::escape(f, self)
             }
@@ -90,8 +111,13 @@ display_as_primitives!(Rust);
 
 #[cfg(test)]
 mod tests {
+    use super::{As,HTML};
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn html_escaping() {
+        assert_eq!(&format!("{}", As(HTML,"&")), "&amp;");
+        assert_eq!(&format!("{}", As(HTML,"hello &>this is cool")),
+                   "hello &amp;&gt;this is cool");
+        assert_eq!(&format!("{}", As(HTML,"hello &>this is 'cool")),
+                   "hello &amp;&gt;this is &#x27;cool");
     }
 }
