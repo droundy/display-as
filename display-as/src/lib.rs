@@ -3,7 +3,7 @@
 //! This crate defines a trait `DisplayAs` that allows a type to be
 //! displayed in a particular format.
 
-use std::fmt::{Formatter, Error};
+use std::fmt::{Display, Formatter, Error};
 
 /// Format is a format that we can use for displaying data.
 pub trait Format {
@@ -20,6 +20,15 @@ pub trait Format {
 pub trait DisplayAs<F: Format> {
     /// Formats the value using the given formatter.
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error>;
+}
+
+/// Choose to `Display` this type using `Format` `F`.
+pub struct As<F: Format, T: DisplayAs<F>>(F,T);
+
+impl<F: Format, T: DisplayAs<F>> Display for As<F,T> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        self.1.fmt(f)
+    }
 }
 
 #[cfg(test)]
