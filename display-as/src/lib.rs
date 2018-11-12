@@ -38,6 +38,13 @@ impl Format for HTML {
         (&s as &Display).fmt(f)
     }
 }
+/// Format as rust code.
+pub struct Rust;
+impl Format for Rust {
+    fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {
+        (&s as &std::fmt::Debug).fmt(f)
+    }
+}
 macro_rules! display_as_from_escape {
     ($format:ident) => {
         impl DisplayAs<$format> for String {
@@ -77,6 +84,9 @@ macro_rules! display_as_primitives {
 }
 display_as_from_escape!(HTML);
 display_as_primitives!(HTML);
+
+display_as_from_escape!(Rust);
+display_as_primitives!(Rust);
 
 #[cfg(test)]
 mod tests {
