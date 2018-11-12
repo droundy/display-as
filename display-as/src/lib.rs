@@ -12,7 +12,7 @@ pub trait Format {
     /// to format, but the general sense is that this string does not
     /// have any internal formatting, and must be displayed
     /// appropriately.
-    fn escape(&str) -> String;
+    fn escape(f: &mut Formatter, s: &str) -> Result<(), Error>;
 }
 
 /// This trait is analogous to `Display`, but will display the data in
@@ -34,13 +34,22 @@ impl<F: Format, T: DisplayAs<F>> Display for As<F,T> {
 /// Format as HTML.
 pub struct HTML;
 impl Format for HTML {
-    fn escape(s: &str) -> String {
-        s.to_string()
+    fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {
+        (&s as &Display).fmt(f)
     }
 }
-impl DisplayAs<HTML> for String {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        (&HTML::escape(&self) as &Display).fmt(f)
+macro_rules! display_as_from_escape {
+    ($format:ident) => {
+        impl DisplayAs<$format> for String {
+            fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+                $format::escape(f, self)
+            }
+        }
+        impl DisplayAs<$format> for str {
+            fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+                $format::escape(f, self)
+            }
+        }
     }
 }
 macro_rules! display_as_from_display {
@@ -66,7 +75,7 @@ macro_rules! display_as_primitives {
         display_as_from_display!($format, u128);
     }
 }
-display_as_from_display!(HTML, str);
+display_as_from_escape!(HTML);
 display_as_primitives!(HTML);
 
 #[cfg(test)]
