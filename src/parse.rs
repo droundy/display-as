@@ -1,4 +1,5 @@
-use combine::{Parser, Stream, ParseError, between, many, skip_count, not_followed_by};
+use combine::{Parser, Stream, ParseError, between, many, many1, any, look_ahead,
+              skip_count, not_followed_by};
 use combine::parser::char::{string};
 use combine::parser::repeat::{take_until};
 use combine::parser::item::{eof};
@@ -29,8 +30,8 @@ parser!{
         let raw_ends = string("{{").map(|_| ())
             .or(string("{%").map(|_| ()))
             .or(eof());
-        // let raw = not_followed_by(eof()).and(take_until(raw_ends).map(|x| Template::RawString(x)));
-        let raw = take_until(raw_ends).map(|x| Template::RawString(x));
+        let raw = look_ahead(any())
+            .with(take_until(raw_ends).map(|x| Template::RawString(x)));
         let expression = between(string("{{"), string("}}"), take_until(string("}}")))
             .map(|s| Template::Expression(s));
         // let mut expression = between(string("{{"), string("}}"), template_parser::<I>())
@@ -56,4 +57,12 @@ fn parse_simple_string() {
                vec![Template::RawString("hello world".to_string())]);
     assert_eq!(parse_template("{{hello world}}"),
                vec![Template::Expression("hello world".to_string())]);
+    assert_eq!(parse_template("hello {{world}}"),
+               vec![Template::RawString("hello ".to_string()),
+                    Template::Expression("world".to_string())]);
+    assert_eq!(parse_template("hello {{world}}!"),
+               vec![Template::RawString("hello ".to_string()),
+                    Template::Expression("world".to_string()),
+                    Template::RawString("!".to_string()),
+               ]);
 }
