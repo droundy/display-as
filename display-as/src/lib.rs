@@ -23,7 +23,7 @@ pub trait DisplayAs<F: Format> {
 }
 
 /// Choose to `Display` this type using `Format` `F`.
-pub struct As<F: Format, T: DisplayAs<F>>(F,T);
+pub struct As<F: Format, T: DisplayAs<F>>(pub F,pub T);
 
 impl<F: Format, T: DisplayAs<F>> Display for As<F,T> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {

@@ -1,14 +1,30 @@
-use combine::{Parser, Stream, ParseError, between, many, many1, any, look_ahead,
-              skip_count, not_followed_by};
+use combine::{Parser, Stream, ParseError, between, many, any, look_ahead};
 use combine::parser::char::{string};
 use combine::parser::repeat::{take_until};
 use combine::parser::item::{eof};
 use combine::stream::state::State;
 
-#[derive(Eq, Debug, PartialEq)]
-enum Template {
+use display_as::{DisplayAs, Rust};
+use std::fmt::{Error, Formatter};
+
+#[derive(Eq, Debug, PartialEq, Clone)]
+pub enum Template {
     RawString(String),
     Expression(String),
+}
+
+impl DisplayAs<Rust> for Template {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        match self {
+            Template::RawString(ref s) => {
+                write!(f, "  f.write_str({:?})?;", s)?;
+            }
+            Template::Expression(ref s) => {
+                write!(f, "  (&({}) as &DisplayAs<HTML>).fmt(f)?;", s)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 
@@ -40,7 +56,7 @@ parser!{
     }
 }
 
-fn parse_template(s: &str) -> Vec<Template> {
+pub fn parse_template(s: &str) -> Vec<Template> {
     match template_parser().easy_parse(State::new(s)) {
         Err(e) => {
             panic!("ran into an error {:?}", e);
