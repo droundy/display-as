@@ -9,3 +9,4 @@ authors = ["droundy <roundyd@physics.oregonstate.edu>"]
 
 display-as = { path = "display-as" }
 glob = "0.2.11"
+combine = "3.6.2"

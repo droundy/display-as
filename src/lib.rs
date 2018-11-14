@@ -4,6 +4,10 @@
 
 extern crate display_as;
 extern crate glob;
+#[macro_use]
+extern crate combine;
+
+mod parse;
 
 /// Use this function in your `build.rs` to compile templates.
 pub fn compile_templates(files_glob: &str) -> std::io::Result<()> {
