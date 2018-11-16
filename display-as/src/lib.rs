@@ -101,6 +101,8 @@ macro_rules! display_as_primitives {
         display_as_from_display!($format, u64);
         display_as_from_display!($format, i128);
         display_as_from_display!($format, u128);
+        display_as_from_display!($format, f64);
+        display_as_from_display!($format, f32);
     }
 }
 display_as_from_escape!(HTML);
