@@ -9,6 +9,8 @@ use std::fmt::{Display, Formatter, Error};
 mod html;
 mod latex;
 
+pub mod float;
+
 pub use html::{HTML};
 pub use latex::{LaTeX};
 
