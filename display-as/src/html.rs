@@ -25,6 +25,7 @@ impl Format for HTML {
         f.write_str(s)
     }
     fn mime() -> mime::Mime { return mime::TEXT_HTML_UTF_8; }
+    fn this_format() -> Self { HTML }
 }
 
 #[macro_export]

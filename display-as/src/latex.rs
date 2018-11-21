@@ -6,6 +6,7 @@ use super::*;
 pub struct LaTeX;
 impl Format for LaTeX {
     fn mime() -> mime::Mime { return "text/x-latex".parse().unwrap(); }
+    fn this_format() -> Self { LaTeX }
     fn escape(f: &mut Formatter, mut s: &str) -> Result<(), Error> {
         let badstuff = "&{}#%\\~$_^";
         while let Some(idx) = s.find(|c| badstuff.contains(c)) {

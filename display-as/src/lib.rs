@@ -3,7 +3,15 @@
 //! This crate defines a trait `DisplayAs` that allows a type to be
 //! displayed in a particular format.
 
+//! The `rouille` feature flag enables conversion of any `As<F,T>`
+//! type into a `rouille::Response`.  Note that it is necessary to be
+//! explicit about the format because a given type `T` may be
+//! displayed in multiple different formats.
+
 extern crate mime;
+
+#[cfg(feature = "rouille")]
+extern crate rouille;
 
 use std::fmt::{Display, Formatter, Error};
 
@@ -26,6 +34,8 @@ pub trait Format {
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error>;
     /// The mime type of this format.
     fn mime() -> mime::Mime;
+    /// Return an actual `Format` for use in `As` below.
+    fn this_format() -> Self;
 }
 
 /// This trait is analogous to `Display`, but will display the data in
@@ -44,6 +54,14 @@ impl<F: Format, T: DisplayAs<F>> Display for As<F,T> {
     }
 }
 
+#[cfg(feature = "rouille")]
+impl<F: Format, T: DisplayAs<F>> Into<rouille::Response> for As<F,T> {
+    fn into(self) -> rouille::Response {
+        let s = format!("{}", &self);
+        rouille::Response::from_data(F::mime().as_ref().to_string(), s)
+    }
+}
+
 /// Format as rust code.
 pub struct Rust;
 impl Format for Rust {
@@ -51,6 +69,7 @@ impl Format for Rust {
         (&s as &std::fmt::Debug).fmt(f)
     }
     fn mime() -> mime::Mime { return "text/x-rust".parse().unwrap(); }
+    fn this_format() -> Self { Rust }
 }
 
 impl<F: Format> DisplayAs<F> for String {
