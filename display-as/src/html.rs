@@ -38,7 +38,7 @@ macro_rules! display_as_from_display {
 }
 
 #[macro_export]
-macro_rules! display_as_primitives {
+macro_rules! display_as_integers {
     ($format:ty) => {
         display_as_from_display!($format, i8);
         display_as_from_display!($format, u8);
@@ -50,12 +50,29 @@ macro_rules! display_as_primitives {
         display_as_from_display!($format, u64);
         display_as_from_display!($format, i128);
         display_as_from_display!($format, u128);
-        display_as_from_display!($format, f64);
-        display_as_from_display!($format, f32);
     }
 }
 
-display_as_primitives!(HTML);
+display_as_integers!(HTML);
+
+#[macro_export]
+macro_rules! display_as_floats {
+    ($format:ty, $e:expr, $after_e:expr, $e_cost:expr) => {
+        impl DisplayAs<$format> for f64 {
+            fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+                super::float::Floating::from(*self)
+                    .fmt_with(f, $e, $after_e, $e_cost)
+            }
+        }
+        impl DisplayAs<$format> for f32 {
+            fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+                super::float::Floating::from(*self)
+                    .fmt_with(f, $e, $after_e, $e_cost)
+            }
+        }
+    }
+}
+display_as_floats!(HTML, "×10<sup>", "</sup>", 3);
 
 #[test]
 fn escaping() {
@@ -64,4 +81,10 @@ fn escaping() {
                "hello &amp;&gt;this is cool");
     assert_eq!(&format!("{}", As(HTML,"hello &>this is 'cool")),
                "hello &amp;&gt;this is &#x27;cool");
+}
+#[test]
+fn floats() {
+    assert_eq!(&format!("{}", As(HTML, 3.0)), "3");
+    assert_eq!(&format!("{}", As(HTML, 3e5)), "3×10<sup>5</sup>");
+    assert_eq!(&format!("{}", As(HTML, 3e4)), "30000");
 }

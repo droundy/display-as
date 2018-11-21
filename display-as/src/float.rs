@@ -48,6 +48,29 @@ impl From<f64> for Floating {
         }
     }
 }
+impl From<f32> for Floating {
+    fn from(x: f32) -> Self {
+        if !x.is_normal() {
+            return Floating::Abnormal(format!("{}", x));
+        }
+        let is_negative = x < 0.;
+        let x = if is_negative { -x } else { x };
+        let x = format!("{:e}", x);
+        let mut parts = x.splitn(2, "e");
+        if let Some(mantissa) = parts.next() {
+            let mut mantissa = mantissa.to_string();
+            if mantissa.len() > 1 {
+                mantissa.remove(1);
+            }
+            let exponent = i16::from_str(parts.next()
+                                         .expect("float repr should have exponent")
+            ).expect("exponent should be integer");
+            Floating::Normal { exponent, mantissa, is_negative }
+        } else {
+            panic!("I think thi sis impossible...");
+        }
+    }
+}
 
 #[test]
 fn to_floating() {

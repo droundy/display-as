@@ -31,6 +31,7 @@ impl Format for Math {
 }
 
 display_as_primitives!(Math);
+display_as_floats!(Math, r"\times10^{", "}", 3);
 
 #[test]
 fn escaping() {
@@ -40,4 +41,9 @@ fn escaping() {
     assert_eq!(&format!("{}", As(Math,"hello &>this is 'cool")),
                r"hello \&>this is 'cool");
 }
-
+#[test]
+fn floats() {
+    assert_eq!(&format!("{}", As(Math, 3.0)), "3");
+    assert_eq!(&format!("{}", As(Math, 3e5)), r"3\times10^{5}");
+    assert_eq!(&format!("{}", As(Math, 3e4)), "30000");
+}

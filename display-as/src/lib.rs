@@ -9,7 +9,7 @@ use std::fmt::{Display, Formatter, Error};
 mod html;
 mod latex;
 
-pub mod float;
+mod float;
 
 pub use html::{HTML};
 pub use latex::{LaTeX};
@@ -64,7 +64,7 @@ impl<'a, F: Format> DisplayAs<F> for &'a str {
     }
 }
 
-display_as_primitives!(Rust);
+display_as_integers!(Rust);
 
 #[cfg(test)]
 mod tests {

@@ -30,7 +30,8 @@ impl Format for LaTeX {
     }
 }
 
-display_as_primitives!(LaTeX);
+display_as_integers!(LaTeX);
+display_as_floats!(LaTeX, r"$\times10^{", "}$", 3);
 
 #[test]
 fn escaping() {
@@ -40,4 +41,9 @@ fn escaping() {
     assert_eq!(&format!("{}", As(LaTeX,"hello &>this is 'cool")),
                r"hello \&>this is 'cool");
 }
-
+#[test]
+fn floats() {
+    assert_eq!(&format!("{}", As(LaTeX, 3.0)), "3");
+    assert_eq!(&format!("{}", As(LaTeX, 3e5)), r"3$\times10^{5}$");
+    assert_eq!(&format!("{}", As(LaTeX, 3e4)), "30000");
+}
