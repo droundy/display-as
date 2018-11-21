@@ -8,3 +8,5 @@ keywords = ["latex", "html", "display"]
 license = "Apache-2.0/MIT"
 
 [dependencies]
+
+mime = "0.3.12"

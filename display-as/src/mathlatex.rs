@@ -5,6 +5,7 @@ use super::*;
 /// Format as LaTeX math mode.
 pub struct Math;
 impl Format for Math {
+    fn mime() -> mime::Mime { return "text/x-latex".parse().unwrap(); }
     fn escape(f: &mut Formatter, mut s: &str) -> Result<(), Error> {
         let badstuff = "&{}#%\\~$_^";
         while let Some(idx) = s.find(|c| badstuff.contains(c)) {

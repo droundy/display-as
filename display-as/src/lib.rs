@@ -3,6 +3,8 @@
 //! This crate defines a trait `DisplayAs` that allows a type to be
 //! displayed in a particular format.
 
+extern crate mime;
+
 use std::fmt::{Display, Formatter, Error};
 
 #[macro_use]
@@ -22,6 +24,8 @@ pub trait Format {
     /// have any internal formatting, and must be displayed
     /// appropriately.
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error>;
+    /// The mime type of this format.
+    fn mime() -> mime::Mime;
 }
 
 /// This trait is analogous to `Display`, but will display the data in
@@ -46,6 +50,7 @@ impl Format for Rust {
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {
         (&s as &std::fmt::Debug).fmt(f)
     }
+    fn mime() -> mime::Mime { return "text/x-rust".parse().unwrap(); }
 }
 
 impl<F: Format> DisplayAs<F> for String {
