@@ -7,8 +7,10 @@ use std::fmt::{Display, Formatter, Error};
 
 #[macro_use]
 mod html;
+mod latex;
 
 pub use html::{HTML};
+pub use latex::{LaTeX};
 
 /// Format is a format that we can use for displaying data.
 pub trait Format {

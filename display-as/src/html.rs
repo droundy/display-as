@@ -57,15 +57,11 @@ macro_rules! display_as_primitives {
 
 display_as_primitives!(HTML);
 
-#[cfg(test)]
-mod tests {
-    use super::{As,HTML};
-    #[test]
-    fn html_escaping() {
-        assert_eq!(&format!("{}", As(HTML,"&")), "&amp;");
-        assert_eq!(&format!("{}", As(HTML,"hello &>this is cool")),
-                   "hello &amp;&gt;this is cool");
-        assert_eq!(&format!("{}", As(HTML,"hello &>this is 'cool")),
-                   "hello &amp;&gt;this is &#x27;cool");
-    }
+#[test]
+fn escaping() {
+    assert_eq!(&format!("{}", As(HTML,"&")), "&amp;");
+    assert_eq!(&format!("{}", As(HTML,"hello &>this is cool")),
+               "hello &amp;&gt;this is cool");
+    assert_eq!(&format!("{}", As(HTML,"hello &>this is 'cool")),
+               "hello &amp;&gt;this is &#x27;cool");
 }
