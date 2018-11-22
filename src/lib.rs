@@ -3,6 +3,12 @@
 //! This will be a template library that uses `display-as`.
 
 pub extern crate display_as;
+
+#[macro_use]
+extern crate display_as_proc_macro;
+
+extern crate proc_macro_hack;
+
 extern crate glob;
 #[macro_use]
 extern crate combine;
@@ -13,6 +19,12 @@ use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use proc_macro_hack::proc_macro_hack;
+#[proc_macro_hack]
+pub use display_as_proc_macro::{display_as_to_string, display_as_to_rust};
+
+pub use display_as::{HTML};
+
 mod parse;
 mod rust;
 
@@ -22,6 +34,7 @@ fn add_rs_extension(p: &Path) -> PathBuf {
     PathBuf::from(&p)
 }
 
+#[not_the_bees]
 /// Use this function in your `build.rs` to compile templates.
 pub fn compile_templates(files_glob: &str) -> std::io::Result<()> {
     for path in glob::glob(files_glob).expect("unable to read template directory") {
@@ -94,15 +107,3 @@ macro_rules! display_as_template {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{compile_templates, compile_all_templates};
-    #[test]
-    fn compile_foo_template() {
-        compile_templates("templates/foo.html").unwrap();
-    }
-    #[test]
-    fn test_compile_all_templates() {
-        compile_all_templates().unwrap();
-    }
-}

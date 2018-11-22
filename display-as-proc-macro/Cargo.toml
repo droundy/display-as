@@ -1,0 +1,11 @@
+[package]
+name = "display-as-proc-macro"
+version = "0.1.0"
+authors = ["droundy <roundyd@physics.oregonstate.edu>"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "0.6"
+proc-macro-hack = "0.5"
