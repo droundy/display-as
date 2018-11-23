@@ -14,7 +14,6 @@ extern crate glob;
 extern crate combine;
 extern crate regex;
 
-use display_as::{As, Rust};
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -23,7 +22,7 @@ use proc_macro_hack::proc_macro_hack;
 #[proc_macro_hack]
 pub use display_as_proc_macro::{display_as_to_string, display_as_to_rust};
 
-pub use display_as::{HTML};
+pub use display_as::{DisplayAs, As, HTML, Rust};
 
 mod parse;
 mod rust;

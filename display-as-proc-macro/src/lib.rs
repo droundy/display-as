@@ -3,9 +3,17 @@ extern crate proc_macro_hack;
 // extern crate syn;
 #[macro_use]
 extern crate quote;
+extern crate proc_macro2;
 
 use proc_macro::{TokenStream, TokenTree, Group, Delimiter};
 use proc_macro_hack::proc_macro_hack;
+
+fn proc_to_two(i: TokenStream) -> proc_macro2::TokenStream {
+    i.into()
+}
+fn two_to_proc(i: proc_macro2::TokenStream) -> TokenStream {
+    i.into()
+}
 
 fn is_str(x: &TokenTree) -> bool {
     match x {
@@ -25,9 +33,10 @@ fn to_tokens(s: &str) -> impl Iterator<Item=TokenTree> {
 #[proc_macro_hack]
 pub fn display_as_to_string(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
-    if let Some(format) = tokens.next() {
+    let format = if let Some(format) = tokens.next() {
+        proc_to_two(format.into())
     } else {
-        panic!("display_as_to_string! needs a Format as its first argument");
+        panic!("display_as_to_string! needs a Format as its first argument")
     };
     if let Some(comma) = tokens.next() {
         if &comma.to_string() != "," {
@@ -42,15 +51,26 @@ pub fn display_as_to_string(input: TokenStream) -> TokenStream {
     let mut next_expr: Vec<TokenTree> = Vec::new();
     for t in tokens {
         if is_str(&t) {
+            if next_expr.len() > 0 {
+                // First print the previous expression...
+                let mut expr = proc_to_two(next_expr.drain(..).collect());
+                let format = format.clone();
+                toks.extend(two_to_proc(quote!{
+                    __o.write_fmt(format_args!("{}", display_as_templates::As(#format, #expr))).unwrap();
+                }).into_iter());
+            }
+            // Now we print this str...
             toks.extend(to_tokens("__o.write_str"));
             toks.push(TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from(t))));
             toks.extend(to_tokens(".unwrap();"));
+        } else {
+            next_expr.push(t);
         }
     }
     toks.extend(to_tokens("__o"));
     let out = TokenStream::from(TokenTree::Group(Group::new(Delimiter::Brace,
                                                             toks.into_iter().collect())));
-    println!("out is {}", out);
+    // println!("out is {}", out);
     out
     // tokens.collect()
 }
