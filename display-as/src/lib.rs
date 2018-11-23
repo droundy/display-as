@@ -18,11 +18,13 @@ use std::fmt::{Display, Formatter, Error};
 #[macro_use]
 mod html;
 mod latex;
+mod rust;
 
 mod float;
 
 pub use html::{HTML};
 pub use latex::{LaTeX};
+pub use rust::{Rust};
 
 /// Format is a format that we can use for displaying data.
 pub trait Format {
@@ -62,16 +64,6 @@ impl<F: Format, T: DisplayAs<F>> Into<rouille::Response> for As<F,T> {
     }
 }
 
-/// Format as rust code.
-pub struct Rust;
-impl Format for Rust {
-    fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {
-        (&s as &std::fmt::Debug).fmt(f)
-    }
-    fn mime() -> mime::Mime { return "text/x-rust".parse().unwrap(); }
-    fn this_format() -> Self { Rust }
-}
-
 impl<F: Format> DisplayAs<F> for String {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         F::escape(f, self)
@@ -87,8 +79,6 @@ impl<'a, F: Format> DisplayAs<F> for &'a str {
         F::escape(f, self)
     }
 }
-
-display_as_integers!(Rust);
 
 #[cfg(test)]
 mod tests {
