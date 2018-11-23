@@ -1,7 +1,7 @@
 [workspace]
 
 [package]
-name = "display-as-templates"
+name = "display-as-template"
 version = "0.1.0"
 authors = ["droundy <roundyd@physics.oregonstate.edu>"]
 

@@ -1,6 +1,6 @@
-extern crate display_as_templates;
+extern crate display_as_template;
 
-use display_as_templates::{display_as_to_string, HTML, Rust};
+use display_as_template::{display_as_to_string, HTML, Rust};
 
 #[test]
 fn just_string() {

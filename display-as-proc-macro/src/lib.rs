@@ -56,7 +56,7 @@ pub fn display_as_to_string(input: TokenStream) -> TokenStream {
                 let mut expr = proc_to_two(next_expr.drain(..).collect());
                 let format = format.clone();
                 toks.extend(two_to_proc(quote!{
-                    __o.write_fmt(format_args!("{}", display_as_templates::As(#format, #expr))).unwrap();
+                    __o.write_fmt(format_args!("{}", display_as_template::As(#format, #expr))).unwrap();
                 }).into_iter());
             }
             // Now we print this str...
