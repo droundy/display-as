@@ -52,6 +52,8 @@ macro_rules! display_as_integers {
         display_as_from_display!($format, u64);
         display_as_from_display!($format, i128);
         display_as_from_display!($format, u128);
+        display_as_from_display!($format, isize);
+        display_as_from_display!($format, usize);
     }
 }
 

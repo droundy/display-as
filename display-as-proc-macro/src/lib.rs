@@ -67,6 +67,14 @@ pub fn display_as_to_string(input: TokenStream) -> TokenStream {
             next_expr.push(t);
         }
     }
+    if next_expr.len() > 0 {
+        // We ended with an expression...
+        let expr = proc_to_two(next_expr.drain(..).collect());
+        let format = format.clone();
+        toks.extend(two_to_proc(quote!{
+            __o.write_fmt(format_args!("{}", display_as_template::As(#format, #expr))).unwrap();
+        }).into_iter());
+    }
     toks.extend(to_tokens("__o"));
     let out = TokenStream::from(TokenTree::Group(Group::new(Delimiter::Brace,
                                                             toks.into_iter().collect())));
@@ -75,12 +83,84 @@ pub fn display_as_to_string(input: TokenStream) -> TokenStream {
     // tokens.collect()
 }
 
+
+#[proc_macro_attribute]
+pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
+    let mut impl_toks: Vec<_> = my_impl.into_iter().collect();
+    if &impl_toks[0].to_string() != "impl" || impl_toks.len() < 3 {
+        panic!("with_template can only be applied to an impl of DisplayAs");
+    }
+    let mut my_format: proc_macro2::TokenStream = quote!();
+    for i in 0..impl_toks.len()-2 {
+        if impl_toks[i].to_string() == "DisplayAs" && impl_toks[i+1].to_string() == "<" {
+            my_format = proc_to_two(impl_toks[i+2].clone().into());
+            break;
+        }
+    }
+    let last = impl_toks.pop().unwrap();
+    if last.to_string() != "{  }" {
+        panic!("with_template must be applied to an impl that ends in '{{}}', not {}",
+               last.to_string());
+    }
+    let my_format = my_format; // no longer mut
+    let tokens = input.into_iter();
+    let mut toks: Vec<TokenTree> = Vec::new();
+    // implementation.extend(TokenStream::from(quote!{
+    //     use std::fmt::Write; let mut __o = String::new();
+    // }).into_iter());
+    let mut next_expr: Vec<TokenTree> = Vec::new();
+    for t in tokens {
+        if is_str(&t) {
+            if next_expr.len() > 0 {
+                // First print the previous expression...
+                let mut expr = proc_to_two(next_expr.drain(..).collect());
+                let format = my_format.clone();
+                toks.extend(two_to_proc(quote!{
+                    __f.write_fmt(format_args!("{}", display_as_template::As(#format, #expr)))?;
+                }).into_iter());
+            }
+            // Now we print this str...
+            toks.extend(to_tokens("__f.write_str"));
+            toks.push(TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from(t))));
+            toks.extend(to_tokens("?;"));
+        } else {
+            next_expr.push(t);
+        }
+    }
+    if next_expr.len() > 0 {
+        // We ended with an expression...
+        let expr = proc_to_two(next_expr.drain(..).collect());
+        let format = my_format.clone();
+        toks.extend(two_to_proc(quote!{
+            __f.write_fmt(format_args!("{}", display_as_template::As(#format, #expr)))?;
+        }).into_iter());
+    }
+    toks.extend(to_tokens("Ok(())"));
+    let out = proc_to_two(TokenStream::from(
+        TokenTree::Group(Group::new(Delimiter::Brace,
+                                    toks.into_iter().collect()))));
+
+    let mut new_impl: Vec<TokenTree> = Vec::new();
+    new_impl.extend(impl_toks.into_iter());
+    new_impl.extend(two_to_proc(quote!{
+        {
+            fn fmt(&self, __f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
+                #out
+            }
+        }
+    }).into_iter());
+    let new_impl = new_impl.into_iter().collect();
+
+    // println!("new_impl is {}", &new_impl);
+    new_impl
+}
+
 #[proc_macro_hack]
 pub fn display_as_to_rust(input: TokenStream) -> TokenStream {
     input
 }
 
-#[proc_macro_attribute]
-pub fn not_the_bees(_metadata: TokenStream, input: TokenStream) -> TokenStream {
-    input
-}
+// #[proc_macro_attribute]
+// pub fn not_the_bees(_metadata: TokenStream, input: TokenStream) -> TokenStream {
+//     input
+// }

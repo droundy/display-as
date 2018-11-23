@@ -69,6 +69,11 @@ impl<F: Format> DisplayAs<F> for String {
         F::escape(f, self)
     }
 }
+impl<'a, F: Format> DisplayAs<F> for &'a String {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        F::escape(f, self)
+    }
+}
 impl<F: Format> DisplayAs<F> for str {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         F::escape(f, self)

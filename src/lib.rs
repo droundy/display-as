@@ -4,7 +4,6 @@
 
 pub extern crate display_as;
 
-#[macro_use]
 extern crate display_as_proc_macro;
 
 extern crate proc_macro_hack;
@@ -22,6 +21,8 @@ use proc_macro_hack::proc_macro_hack;
 #[proc_macro_hack]
 pub use display_as_proc_macro::{display_as_to_string, display_as_to_rust};
 
+pub use display_as_proc_macro::{with_template};
+
 pub use display_as::{DisplayAs, As, HTML, Rust};
 
 mod parse;
@@ -33,7 +34,6 @@ fn add_rs_extension(p: &Path) -> PathBuf {
     PathBuf::from(&p)
 }
 
-#[not_the_bees]
 /// Use this function in your `build.rs` to compile templates.
 pub fn compile_templates(files_glob: &str) -> std::io::Result<()> {
     for path in glob::glob(files_glob).expect("unable to read template directory") {
