@@ -83,6 +83,52 @@ pub fn display_as_to_string(input: TokenStream) -> TokenStream {
     // tokens.collect()
 }
 
+fn expr_toks_to_stmt(format: &proc_macro2::TokenStream, expr: &mut Vec<TokenTree>)
+                     -> impl Iterator<Item=TokenTree> {
+    if expr.len() > 0 {
+        let expr = proc_to_two(expr.drain(..).collect());
+        let format = format.clone();
+        two_to_proc(quote!{
+            __f.write_fmt(format_args!("{}", display_as_template::As(#format, #expr)))?;
+        }).into_iter()
+    } else {
+        two_to_proc(quote!{}).into_iter()
+    }
+}
+fn expr_toks_to_conditional(format: &proc_macro2::TokenStream, expr: &mut Vec<TokenTree>)
+                            -> TokenStream {
+    expr.drain(..).collect()
+}
+
+fn template_to_statements(format: &proc_macro2::TokenStream, template: TokenStream)
+                          -> TokenStream {
+    let mut toks: Vec<TokenTree> = Vec::new();
+    let mut next_expr: Vec<TokenTree> = Vec::new();
+    for t in template.into_iter() {
+        if let TokenTree::Group(g) = t.clone() {
+            if g.delimiter() == Delimiter::Brace {
+                toks.extend(expr_toks_to_conditional(&format, &mut next_expr).into_iter());
+                toks.push(TokenTree::Group(
+                    Group::new(Delimiter::Brace,
+                               template_to_statements(format, g.stream()))));
+            } else {
+                next_expr.push(t);
+            }
+        } else if is_str(&t) {
+            // First print the previous expression...
+            toks.extend(expr_toks_to_stmt(&format, &mut next_expr));
+            // Now we print this str...
+            toks.extend(to_tokens("__f.write_str"));
+            toks.push(TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from(t))));
+            toks.extend(to_tokens("?;"));
+        } else {
+            next_expr.push(t);
+        }
+    }
+    // Now print the final expression...
+    toks.extend(expr_toks_to_stmt(&format, &mut next_expr));
+    TokenTree::Group(Group::new(Delimiter::Brace, toks.into_iter().collect())).into()
+}
 
 #[proc_macro_attribute]
 pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
@@ -103,43 +149,14 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
                last.to_string());
     }
     let my_format = my_format; // no longer mut
-    let tokens = input.into_iter();
-    let mut toks: Vec<TokenTree> = Vec::new();
-    // implementation.extend(TokenStream::from(quote!{
-    //     use std::fmt::Write; let mut __o = String::new();
-    // }).into_iter());
-    let mut next_expr: Vec<TokenTree> = Vec::new();
-    for t in tokens {
-        if is_str(&t) {
-            if next_expr.len() > 0 {
-                // First print the previous expression...
-                let mut expr = proc_to_two(next_expr.drain(..).collect());
-                let format = my_format.clone();
-                toks.extend(two_to_proc(quote!{
-                    __f.write_fmt(format_args!("{}", display_as_template::As(#format, #expr)))?;
-                }).into_iter());
-            }
-            // Now we print this str...
-            toks.extend(to_tokens("__f.write_str"));
-            toks.push(TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from(t))));
-            toks.extend(to_tokens("?;"));
-        } else {
-            next_expr.push(t);
-        }
-    }
-    if next_expr.len() > 0 {
-        // We ended with an expression...
-        let expr = proc_to_two(next_expr.drain(..).collect());
-        let format = my_format.clone();
-        toks.extend(two_to_proc(quote!{
-            __f.write_fmt(format_args!("{}", display_as_template::As(#format, #expr)))?;
-        }).into_iter());
-    }
-    toks.extend(to_tokens("Ok(())"));
-    let out = proc_to_two(TokenStream::from(
-        TokenTree::Group(Group::new(Delimiter::Brace,
-                                    toks.into_iter().collect()))));
+    let statements = proc_to_two(template_to_statements(&my_format, input));
 
+    let out = quote!{
+        {
+            #statements
+            Ok(())
+        }
+    };
     let mut new_impl: Vec<TokenTree> = Vec::new();
     new_impl.extend(impl_toks.into_iter());
     new_impl.extend(two_to_proc(quote!{
@@ -151,7 +168,7 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     }).into_iter());
     let new_impl = new_impl.into_iter().collect();
 
-    // println!("new_impl is {}", &new_impl);
+    println!("new_impl is {}", &new_impl);
     new_impl
 }
 
