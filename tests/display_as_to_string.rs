@@ -24,3 +24,12 @@ fn string_and_float() {
     assert_eq!(display_as_to_string!(Rust, r"Number " 1.2345e2 r" is even"),
                r"Number 123.45 is even");
 }
+#[test]
+fn test_conditionals() {
+    let foo = 3.0;
+    let bar = 2.0;
+    assert_eq!(display_as_to_string!(HTML, r"Game: " if foo > bar { r"foo wins" }),
+               r"Game: foo wins");
+    assert_eq!(display_as_to_string!(HTML, r"Counting: " for i in 0..5 { i " " }),
+               r"Counting: 0 1 2 3 4 ");
+}

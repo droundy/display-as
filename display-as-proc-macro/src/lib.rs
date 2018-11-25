@@ -46,41 +46,20 @@ pub fn display_as_to_string(input: TokenStream) -> TokenStream {
     } else {
         panic!("display_as_to_string! needs a Format followed by a comma");
     }
-    let mut toks: Vec<TokenTree> = Vec::new();
-    toks.extend(TokenStream::from(quote!{ use std::fmt::Write; let mut __o = String::new(); }).into_iter());
-    let mut next_expr: Vec<TokenTree> = Vec::new();
-    for t in tokens {
-        if is_str(&t) {
-            if next_expr.len() > 0 {
-                // First print the previous expression...
-                let mut expr = proc_to_two(next_expr.drain(..).collect());
-                let format = format.clone();
-                toks.extend(two_to_proc(quote!{
-                    __o.write_fmt(format_args!("{}", display_as_template::As(#format, #expr))).unwrap();
-                }).into_iter());
-            }
-            // Now we print this str...
-            toks.extend(to_tokens("__o.write_str"));
-            toks.push(TokenTree::Group(Group::new(Delimiter::Parenthesis, TokenStream::from(t))));
-            toks.extend(to_tokens(".unwrap();"));
-        } else {
-            next_expr.push(t);
+
+    let statements = proc_to_two(template_to_statements(&format, tokens.collect()));
+
+    quote!(
+        {
+            use std::fmt::Write;
+            let doit = || -> Result<String, std::fmt::Error> {
+                let mut __f = String::new();
+                #statements
+                Ok(__f)
+            };
+            doit().expect("trouble writing to String??!")
         }
-    }
-    if next_expr.len() > 0 {
-        // We ended with an expression...
-        let expr = proc_to_two(next_expr.drain(..).collect());
-        let format = format.clone();
-        toks.extend(two_to_proc(quote!{
-            __o.write_fmt(format_args!("{}", display_as_template::As(#format, #expr))).unwrap();
-        }).into_iter());
-    }
-    toks.extend(to_tokens("__o"));
-    let out = TokenStream::from(TokenTree::Group(Group::new(Delimiter::Brace,
-                                                            toks.into_iter().collect())));
-    // println!("out is {}", out);
-    out
-    // tokens.collect()
+    ).into()
 }
 
 fn expr_toks_to_stmt(format: &proc_macro2::TokenStream, expr: &mut Vec<TokenTree>)
@@ -168,7 +147,7 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     }).into_iter());
     let new_impl = new_impl.into_iter().collect();
 
-    println!("new_impl is {}", &new_impl);
+    // println!("new_impl is {}", &new_impl);
     new_impl
 }
 
