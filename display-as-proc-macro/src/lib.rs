@@ -7,6 +7,10 @@ extern crate proc_macro2;
 
 use proc_macro::{TokenStream, TokenTree, Group, Delimiter};
 use proc_macro_hack::proc_macro_hack;
+use std::path::PathBuf;
+use std::fs::File;
+use std::io::Read;
+use std::fmt::Write;
 
 fn proc_to_two(i: TokenStream) -> proc_macro2::TokenStream {
     i.into()
@@ -28,6 +32,15 @@ fn is_str(x: &TokenTree) -> bool {
 fn to_tokens(s: &str) -> impl Iterator<Item=TokenTree> {
     let ts: TokenStream = s.parse().unwrap();
     ts.into_iter()
+}
+
+fn count_pounds(x: &str) -> &'static str {
+    for pounds in &["#######", "######", "#####", "####", "###", "##", "#", ""] {
+        if x.contains(pounds) {
+            return pounds;
+        }
+    }
+    ""
 }
 
 #[proc_macro_hack]
@@ -74,8 +87,7 @@ fn expr_toks_to_stmt(format: &proc_macro2::TokenStream, expr: &mut Vec<TokenTree
         two_to_proc(quote!{}).into_iter()
     }
 }
-fn expr_toks_to_conditional(format: &proc_macro2::TokenStream, expr: &mut Vec<TokenTree>)
-                            -> TokenStream {
+fn expr_toks_to_conditional(expr: &mut Vec<TokenTree>) -> TokenStream {
     expr.drain(..).collect()
 }
 
@@ -86,7 +98,7 @@ fn template_to_statements(format: &proc_macro2::TokenStream, template: TokenStre
     for t in template.into_iter() {
         if let TokenTree::Group(g) = t.clone() {
             if g.delimiter() == Delimiter::Brace {
-                toks.extend(expr_toks_to_conditional(&format, &mut next_expr).into_iter());
+                toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
                 toks.push(TokenTree::Group(
                     Group::new(Delimiter::Brace,
                                template_to_statements(format, g.stream()))));
@@ -109,6 +121,10 @@ fn template_to_statements(format: &proc_macro2::TokenStream, template: TokenStre
     TokenTree::Group(Group::new(Delimiter::Brace, toks.into_iter().collect())).into()
 }
 
+fn parse_string(i: &str) -> Option<String> {
+    i.parse().ok()
+}
+
 #[proc_macro_attribute]
 pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     let mut impl_toks: Vec<_> = my_impl.into_iter().collect();
@@ -128,6 +144,32 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
                last.to_string());
     }
     let my_format = my_format; // no longer mut
+
+    let input_vec: Vec<_> = input.clone().into_iter().collect();
+    println!("input_vec = {:?}", input_vec.clone());
+    let input =
+        if input_vec.len() == 1 {
+            println!("just one token: {:?}", input_vec[0].to_string());
+            let pathname = input_vec[0].to_string().replace("\"", "");
+            println!("pathname is {} and {:?}", pathname, parse_string(&pathname));
+            let path = PathBuf::from(pathname);
+            if let Ok(mut f) = File::open(&path) {
+                let mut contents = String::new();
+                f.read_to_string(&mut contents)
+                    .expect("something went wrong reading the file");
+                let pounds = count_pounds(&contents);
+                contents.write_str(&pounds).unwrap();
+                contents.write_str("\"").unwrap();
+                let mut template = "\"".to_string();
+                template.write_str(&pounds).unwrap();
+                template.write_str(&contents).unwrap();
+                template.parse().expect("trouble parsing file")
+            } else {
+                panic!("No such file: {}", path.display())
+            }
+        } else {
+            input
+        };
     let statements = proc_to_two(template_to_statements(&my_format, input));
 
     let out = quote!{

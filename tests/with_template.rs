@@ -41,3 +41,22 @@ fn testing_if() {
                                                    age: 2 })),
                "TestingIf: minor Miri (THE END)");
 }
+
+
+struct FromFile {
+    name: String,
+    age: usize,
+}
+
+#[with_template("tests/from-file.html")]
+impl DisplayAs<HTML> for FromFile {}
+
+#[test]
+fn from_file() {
+    assert_eq!(&format!("{}", As(HTML, FromFile { name: "David".to_string(),
+                                                   age: 45 })),
+               "FromFile: grown-up David who is 45 years old (THE END)\n");
+    assert_eq!(&format!("{}", As(HTML, FromFile { name: "Miri".to_string(),
+                                                   age: 2 })),
+               "FromFile: minor Miri (THE END)\n");
+}
