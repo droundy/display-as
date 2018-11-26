@@ -2,16 +2,29 @@
 
 //! This will be a template library that uses `display-as`.
 
-pub extern crate display_as;
+extern crate display_as;
+
+extern crate display_as_proc_macro;
+
+extern crate proc_macro_hack;
+
 extern crate glob;
 #[macro_use]
 extern crate combine;
 extern crate regex;
 
-use display_as::{As, Rust};
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+
+use proc_macro_hack::proc_macro_hack;
+#[proc_macro_hack]
+pub use display_as_proc_macro::{display_as_to_string};
+
+/// Can I write doc here?
+pub use display_as_proc_macro::{with_template};
+
+pub use display_as::{DisplayAs, As, HTML, Rust};
 
 mod parse;
 mod rust;
@@ -94,15 +107,3 @@ macro_rules! display_as_template {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{compile_templates, compile_all_templates};
-    #[test]
-    fn compile_foo_template() {
-        compile_templates("templates/foo.html").unwrap();
-    }
-    #[test]
-    fn test_compile_all_templates() {
-        compile_all_templates().unwrap();
-    }
-}
