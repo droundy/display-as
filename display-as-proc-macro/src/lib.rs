@@ -1,3 +1,5 @@
+//! This is the implementation crate for `display-as-template`.
+
 extern crate proc_macro;
 extern crate proc_macro_hack;
 // extern crate syn;
@@ -59,6 +61,9 @@ fn count_pounds(x: &str) -> &'static str {
     ""
 }
 
+/// Use the given template to create a string.
+///
+/// You can think of this as being kind of like `format!` on strange drugs.
 #[proc_macro_hack]
 pub fn display_as_to_string(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
@@ -137,10 +142,37 @@ fn template_to_statements(format: &proc_macro2::TokenStream, template: TokenStre
     TokenTree::Group(Group::new(Delimiter::Brace, toks.into_iter().collect())).into()
 }
 
-fn parse_string(i: &str) -> Option<String> {
-    i.parse().ok()
-}
-
+/// Implement `DisplayAs` for a given type.
+///
+/// Why not use `derive`? Because we need to be able to specify which
+/// format we want to implement, and we might want to also use
+/// additional generic bounds.
+///
+/// You may use `with_template` in two different ways: inline or with
+/// a separate template file.  To use an inline template, you provide
+/// your template as an argument, as in `#[with_template("Vec(" self.x
+/// "," self.y "," self.z ",")]`.  The template consists of
+/// alternating strings and expressions, although you can also use if
+/// statements, for loops, or match expressions, although match
+/// expressions must use curly braces on each branch.
+///
+/// A template file is specified by giving the path relative to the
+/// current source file as a string argument:
+/// `#[with_template("filename.html")]`.  There are a few hokey
+/// restrictions on your filenames.
+///
+/// 1. Your filename cannot have an embedded `"` character.
+/// 2. Your string specifying the filename cannot be a "raw" string.
+/// 3. You cannot use any characters (including a backslash) that need escaping in rust strings.
+///
+/// These constraints are very hokey, and may be lifted in the future.
+/// File a bug report if you have a good use for lifting these
+/// constraints.
+///
+/// The file itself will have a template like those above, but without
+/// the beginning or ending quotation marks.  Furthermore, it is
+/// assumed that you are using raw strings, and that you use an equal
+/// number of `#` signs throughout.
 #[proc_macro_attribute]
 pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     let mut impl_toks: Vec<_> = my_impl.into_iter().collect();
@@ -180,8 +212,9 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
                 let pounds = count_pounds(&contents);
                 contents.write_str(&pounds).unwrap();
                 contents.write_str("\"").unwrap();
-                let mut template = "\"".to_string();
+                let mut template = "r".to_string();
                 template.write_str(&pounds).unwrap();
+                template.write_str("\"").unwrap();
                 template.write_str(&contents).unwrap();
                 template.write_str("  ({ let _dummy = include_str!(\"").unwrap();
                 template.write_str(&pathname).unwrap();
@@ -215,13 +248,3 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     // println!("new_impl is {}", &new_impl);
     new_impl
 }
-
-#[proc_macro_hack]
-pub fn display_as_to_rust(input: TokenStream) -> TokenStream {
-    input
-}
-
-// #[proc_macro_attribute]
-// pub fn not_the_bees(_metadata: TokenStream, input: TokenStream) -> TokenStream {
-//     input
-// }
