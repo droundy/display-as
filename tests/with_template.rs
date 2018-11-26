@@ -48,7 +48,7 @@ struct FromFile {
     age: usize,
 }
 
-#[with_template("tests/from-file.html")]
+#[with_template("from-file.html")]
 impl DisplayAs<HTML> for FromFile {}
 
 #[test]

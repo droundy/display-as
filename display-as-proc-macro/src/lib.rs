@@ -4,6 +4,7 @@ extern crate proc_macro_hack;
 #[macro_use]
 extern crate quote;
 extern crate proc_macro2;
+extern crate glob;
 
 use proc_macro::{TokenStream, TokenTree, Group, Delimiter};
 use proc_macro_hack::proc_macro_hack;
@@ -11,6 +12,21 @@ use std::path::PathBuf;
 use std::fs::File;
 use std::io::Read;
 use std::fmt::Write;
+
+fn find_me(pattern: &str) -> Option<PathBuf> {
+    for path in glob::glob("**/*.rs").unwrap() {
+        if let Ok(path) = path {
+            if let Ok(mut f) = File::open(&path) {
+                let mut contents = String::new();
+                f.read_to_string(&mut contents).ok();
+                if contents.contains(pattern) {
+                    return Some(path.to_owned());
+                }
+            }
+        }
+    }
+    None
+}
 
 fn proc_to_two(i: TokenStream) -> proc_macro2::TokenStream {
     i.into()
@@ -146,13 +162,17 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     let my_format = my_format; // no longer mut
 
     let input_vec: Vec<_> = input.clone().into_iter().collect();
-    println!("input_vec = {:?}", input_vec.clone());
     let input =
         if input_vec.len() == 1 {
-            println!("just one token: {:?}", input_vec[0].to_string());
             let pathname = input_vec[0].to_string().replace("\"", "");
-            println!("pathname is {} and {:?}", pathname, parse_string(&pathname));
-            let path = PathBuf::from(pathname);
+            let sourcefile = find_me(&pathname).expect("Unable to locate source file");
+            let sourcedir =
+                if let Some(d) = sourcefile.parent() {
+                    PathBuf::from(d)
+                } else {
+                    PathBuf::from(".")
+                };
+            let path = sourcedir.join(&pathname);
             if let Ok(mut f) = File::open(&path) {
                 let mut contents = String::new();
                 f.read_to_string(&mut contents)
@@ -163,6 +183,9 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
                 let mut template = "\"".to_string();
                 template.write_str(&pounds).unwrap();
                 template.write_str(&contents).unwrap();
+                template.write_str("  ({ let _dummy = include_str!(\"").unwrap();
+                template.write_str(&pathname).unwrap();
+                template.write_str("\"); \"\"})").unwrap();
                 template.parse().expect("trouble parsing file")
             } else {
                 panic!("No such file: {}", path.display())
