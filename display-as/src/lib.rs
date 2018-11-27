@@ -3,15 +3,7 @@
 //! This crate defines a trait `DisplayAs` that allows a type to be
 //! displayed in a particular format.
 
-//! The `rouille` feature flag enables conversion of any `As<F,T>`
-//! type into a `rouille::Response`.  Note that it is necessary to be
-//! explicit about the format because a given type `T` may be
-//! displayed in multiple different formats.
-
 extern crate mime;
-
-#[cfg(feature = "rouille")]
-extern crate rouille;
 
 use std::fmt::{Display, Formatter, Error};
 
@@ -56,11 +48,34 @@ impl<F: Format, T: DisplayAs<F>> Display for As<F,T> {
     }
 }
 
+/// The `rouille` feature flag enables conversion of any `As<F,T>`
+/// type into a `rouille::Response`.  Note that it is necessary to be
+/// explicit about the format because a given type `T` may be
+/// displayed in multiple different formats.
 #[cfg(feature = "rouille")]
-impl<F: Format, T: DisplayAs<F>> Into<rouille::Response> for As<F,T> {
-    fn into(self) -> rouille::Response {
-        let s = format!("{}", &self);
-        rouille::Response::from_data(F::mime().as_ref().to_string(), s)
+pub mod rouille {
+    extern crate rouille;
+    use super::{Format, As, DisplayAs};
+    impl<F: Format, T: DisplayAs<F>> Into<rouille::Response> for As<F,T> {
+        fn into(self) -> rouille::Response {
+            let s = format!("{}", &self);
+            rouille::Response::from_data(F::mime().as_ref().to_string(), s)
+        }
+    }
+}
+
+#[cfg(feature = "actix-web")]
+pub mod actix {
+    extern crate actix_web;
+    use actix_web::{Responder, HttpRequest, HttpResponse};
+    use super::{Format, As, DisplayAs};
+    impl<F: Format, T: DisplayAs<F>> Responder for As<F,T> {
+        fn respond_to(self, _req: &HttpRequest<S>)
+                      -> Result<HttpResponse, Self::Error> {
+            Ok(HttpResponse::Ok()
+               .content_type(F::mime().as_ref().to_string())
+               .body(format!("{}", &self)))
+        }
     }
 }
 
