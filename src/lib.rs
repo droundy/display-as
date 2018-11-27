@@ -1,6 +1,8 @@
 #![deny(missing_docs)]
 
-//! This will be a template library that uses `display-as`.
+//! This is a template library that uses and defines the `DisplayAs`
+//! trait defined in the `display-as` crate (also reexported from
+//! here).
 
 extern crate display_as;
 
