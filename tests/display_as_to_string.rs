@@ -33,3 +33,10 @@ fn test_conditionals() {
     assert_eq!(display_as_to_string!(HTML, r"Counting: " for i in 0..5 { i " " }),
                r"Counting: 0 1 2 3 4 ");
 }
+
+#[test]
+fn test_mixed_formats() {
+    let foo = 3e6;
+    assert_eq!(display_as_to_string!(HTML, r"Number: " foo r" and " foo as Rust r"!"),
+               r"Number: 3×10<sup>6</sup> and 3e6!");
+}
