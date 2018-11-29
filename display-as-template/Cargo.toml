@@ -12,8 +12,8 @@ all-features = true
 
 [dependencies]
 
-display-as = { path = "../display-as" }
-display-as-proc-macro = { path = "../display-as-proc-macro" }
+display-as = { version = "0.1.4", path = "../display-as" }
+display-as-proc-macro = { version = "0.1.1", path = "../display-as-proc-macro" }
 
 proc-macro-hack = "0.5"
 glob = "0.2.11"
