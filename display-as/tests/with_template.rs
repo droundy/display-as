@@ -1,6 +1,6 @@
-extern crate display_as_template;
+extern crate display_as;
 
-use display_as_template::{with_template, DisplayAs, As, HTML};
+use display_as::{with_template, DisplayAs, As, HTML};
 
 struct Foo {
     name: String,

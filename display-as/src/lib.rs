@@ -4,6 +4,15 @@
 //! displayed in a particular format.
 
 extern crate mime;
+extern crate display_as_proc_macro;
+extern crate proc_macro_hack;
+
+use proc_macro_hack::proc_macro_hack;
+#[proc_macro_hack]
+pub use display_as_proc_macro::{display_as_to_string};
+
+/// Can I write doc here?
+pub use display_as_proc_macro::{with_template};
 
 use std::fmt::{Display, Formatter, Error};
 

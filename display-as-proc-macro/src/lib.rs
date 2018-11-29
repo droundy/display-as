@@ -104,13 +104,13 @@ fn expr_toks_to_stmt(format: &proc_macro2::TokenStream, expr: &mut Vec<TokenTree
         expr.pop();
         let expr = proc_to_two(expr.drain(..).collect());
         two_to_proc(quote!{
-            __f.write_fmt(format_args!("{}", display_as_template::As(#format, #expr)))?;
+            __f.write_fmt(format_args!("{}", display_as::As(#format, #expr)))?;
         }).into_iter()
     } else if expr.len() > 0 {
         let expr = proc_to_two(expr.drain(..).collect());
         let format = format.clone();
         two_to_proc(quote!{
-            __f.write_fmt(format_args!("{}", display_as_template::As(#format, #expr)))?;
+            __f.write_fmt(format_args!("{}", display_as::As(#format, #expr)))?;
         }).into_iter()
     } else {
         two_to_proc(quote!{}).into_iter()

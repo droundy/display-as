@@ -12,6 +12,9 @@ all-features = true
 
 [dependencies]
 
+display-as-proc-macro = { version = "0.1.1", path = "../display-as-proc-macro" }
+proc-macro-hack = "0.5"
+
 mime = "0.3.12"
 
 rouille = { version = "2.2.0", optional = true }
