@@ -1,7 +1,7 @@
 #![deny(missing_docs)]
 
-//! This crate defines a trait `DisplayAs` that allows a type to be
-//! displayed in a particular format.
+//! This template crate uses and defines a `DisplayAs` trait, which
+//! allows a type to be displayed in a particular format.
 
 extern crate mime;
 extern crate display_as_proc_macro;
