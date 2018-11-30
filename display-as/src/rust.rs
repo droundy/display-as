@@ -12,8 +12,8 @@ impl Format for Rust {
     fn this_format() -> Self { Rust }
 }
 
-display_as_integers!(Rust);
-display_as_floats!(Rust, "e", "", 1);
+display_integers_as!(Rust);
+display_floats_as!(Rust, "e", "", 1);
 
 #[test]
 fn escaping() {

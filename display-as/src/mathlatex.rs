@@ -32,8 +32,8 @@ impl Format for Math {
     }
 }
 
-display_as_primitives!(Math);
-display_as_floats!(Math, r"\times10^{", "}", 3);
+display_integers_as!(Math);
+display_floats_as!(Math, r"\times10^{", "}", 3);
 
 #[test]
 fn escaping() {

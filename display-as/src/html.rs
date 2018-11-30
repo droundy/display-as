@@ -40,7 +40,7 @@ macro_rules! display_as_from_display {
 }
 
 #[macro_export]
-macro_rules! display_as_integers {
+macro_rules! display_integers_as {
     ($format:ty) => {
         display_as_from_display!($format, i8);
         display_as_from_display!($format, u8);
@@ -57,10 +57,10 @@ macro_rules! display_as_integers {
     }
 }
 
-display_as_integers!(HTML);
+display_integers_as!(HTML);
 
 #[macro_export]
-macro_rules! display_as_floats {
+macro_rules! display_floats_as {
     ($format:ty, $e:expr, $after_e:expr, $e_cost:expr) => {
         impl DisplayAs<$format> for f64 {
             fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
@@ -76,7 +76,7 @@ macro_rules! display_as_floats {
         }
     }
 }
-display_as_floats!(HTML, "×10<sup>", "</sup>", 3);
+display_floats_as!(HTML, "×10<sup>", "</sup>", 3);
 
 #[test]
 fn escaping() {

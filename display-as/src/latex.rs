@@ -32,8 +32,8 @@ impl Format for LaTeX {
     }
 }
 
-display_as_integers!(LaTeX);
-display_as_floats!(LaTeX, r"$\times10^{", "}$", 3);
+display_integers_as!(LaTeX);
+display_floats_as!(LaTeX, r"$\times10^{", "}$", 3);
 
 #[test]
 fn escaping() {

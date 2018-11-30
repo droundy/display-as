@@ -3,6 +3,8 @@
 //! This template crate uses and defines a `DisplayAs` trait, which
 //! allows a type to be displayed in a particular format.
 
+//!
+
 extern crate mime;
 extern crate display_as_proc_macro;
 extern crate proc_macro_hack;
@@ -19,12 +21,14 @@ use std::fmt::{Display, Formatter, Error};
 #[macro_use]
 mod html;
 mod latex;
+mod mathlatex;
 mod rust;
 
 mod float;
 
 pub use html::{HTML};
 pub use latex::{LaTeX};
+pub use mathlatex::{Math};
 pub use rust::{Rust};
 
 /// Format is a format that we can use for displaying data.
