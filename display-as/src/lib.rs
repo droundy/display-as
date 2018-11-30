@@ -2,8 +2,50 @@
 
 //! This template crate uses and defines a `DisplayAs` trait, which
 //! allows a type to be displayed in a particular format.
-
 //!
+//! # Overview
+//!
+//! This crate defines three things that you need be aware of in order
+//! to use it: the `Format` trait, which defines a markup language or
+//! other format, the `DisplayAs` trait which is implemented for any
+//! type that can be converted into some `Format`, and finally the
+//! template language and macros which allow you to conveniently
+//! implement `DisplayAs` for your own types.  I will describe each of
+//! these concepts in order.  (**FIXME** I should also have a
+//! quick-start...)
+//!
+//! ## `Format`
+//!
+//! There are a number of predefined Formats (and I can easily add
+//! more if there are user requests), so the focus here will be on
+//! using these Formats, rather than on defining your own (which also
+//! isn't too hard).  A format is a zero-size type that has a rule for
+//! escaping strings and an associated MIME type.  The builtin formats
+//! include `HTML`, `LaTeX`, and `Math` (which is math-mode LaTeX).
+//!
+//! ## `DisplayAs<F>`
+//!
+//! The `DisplayAs<F: Format>` trait is entirely analogous to the `Display` trait
+//! in the standard library, except that it is parametrized by a
+//! `Format` so you can have different representations for the same
+//! type in different formats.  This also makes it harder to
+//! accidentally include the wrong representation in your output.
+//!
+//! Most of the primitive types already have `DisplayAs` implemented
+//! for the included Formats.  If you encounter a type that you wish
+//! had `DisplayAs` implemented for a given format, just let me know.
+//! You can manually implement `DisplayAs` for any of your own types
+//! (it's not worse than implementing `Display`) but that isn't how
+//! you are intended to do things (except perhaps in very simple
+//! cases, like a wrapper around an integer).  Instead you will want
+//! to use a template to implement `DisplayAs` for your own types.
+//!
+//! ## Templates!
+//!
+//! There are two template macros that you can use.  If you just want
+//! to get a string, you will use something like
+//! `display_as_string!("hello world" value)`.  If you want to
+//! implement `DisplayAs`, you will use the attribute `with_template`.
 
 extern crate mime;
 extern crate display_as_proc_macro;
