@@ -62,19 +62,38 @@ display_integers_as!(HTML);
 /// Inconveniently implement DisplayAs for floats for a new `Format`.
 ///
 /// This is inconvenient because we want to enable pretty formatting
-/// of both large and small numbers.
+/// of both large and small numbers in whatever markup language we are
+/// using.  The first argument of the macro is the format that wants
+/// implementation of `DisplayAs` for floats.
+///
+/// For partial documentation of the other files, see
+/// [Floating::fmt_with](float/enum.Floating.html#method.fmt_with).
+/// However, I think some examples for HTML will most easily define
+/// the other arguments.
+/// ```
+/// struct HTML;
+/// use display_as::{Format};
+/// impl Format for HTML {
+///    fn escape(f: &mut ::std::fmt::Formatter, mut s: &str) -> Result<(), ::std::fmt::Error> {
+///        f.write_str(s) // for example I skip escaping...
+///    }
+///    fn mime() -> mime::Mime { return mime::TEXT_HTML_UTF_8; }
+///    fn this_format() -> Self { HTML }
+/// }
+/// display_as::display_floats_as!(HTML, "×10<sup>", "</sup>", 3, Some("10<sup>"));
+/// ```
 #[macro_export]
 macro_rules! display_floats_as {
     ($format:ty, $e:expr, $after_e:expr, $e_cost:expr, $power_ten:expr) => {
-        impl DisplayAs<$format> for f64 {
-            fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-                super::float::Floating::from(*self)
+        impl $crate::DisplayAs<$format> for f64 {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
+                $crate::float::Floating::from(*self)
                     .fmt_with(f, $e, $after_e, $e_cost, $power_ten)
             }
         }
-        impl DisplayAs<$format> for f32 {
-            fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-                super::float::Floating::from(*self)
+        impl $crate::DisplayAs<$format> for f32 {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
+                $crate::float::Floating::from(*self)
                     .fmt_with(f, $e, $after_e, $e_cost, $power_ten)
             }
         }

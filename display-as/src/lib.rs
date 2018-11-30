@@ -24,7 +24,7 @@ mod latex;
 mod mathlatex;
 mod rust;
 
-mod float;
+pub mod float;
 
 pub use html::{HTML};
 pub use latex::{LaTeX};
