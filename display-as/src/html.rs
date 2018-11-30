@@ -60,7 +60,7 @@ macro_rules! display_integers_as {
 display_integers_as!(HTML);
 
 /// Inconveniently implement DisplayAs for floats for a new `Format`.
-
+///
 /// This is inconvenient because we want to enable pretty formatting
 /// of both large and small numbers.
 #[macro_export]
@@ -94,5 +94,6 @@ fn escaping() {
 fn floats() {
     assert_eq!(&format!("{}", As(HTML, 3.0)), "3");
     assert_eq!(&format!("{}", As(HTML, 3e5)), "3×10<sup>5</sup>");
+    assert_eq!(&format!("{}", As(HTML, 1e-6)), "10<sup>-6</sup>");
     assert_eq!(&format!("{}", As(HTML, 3e4)), "30000");
 }
