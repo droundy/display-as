@@ -28,7 +28,6 @@ impl Format for HTML {
     fn this_format() -> Self { HTML }
 }
 
-#[macro_export]
 macro_rules! display_as_from_display {
     ($format:ty, $type:ty) => {
         impl DisplayAs<$format> for $type {
@@ -39,6 +38,7 @@ macro_rules! display_as_from_display {
     }
 }
 
+/// Conveniently implement DisplayAs for integers for a new `Format`.
 #[macro_export]
 macro_rules! display_integers_as {
     ($format:ty) => {
@@ -59,24 +59,28 @@ macro_rules! display_integers_as {
 
 display_integers_as!(HTML);
 
+/// Inconveniently implement DisplayAs for floats for a new `Format`.
+
+/// This is inconvenient because we want to enable pretty formatting
+/// of both large and small numbers.
 #[macro_export]
 macro_rules! display_floats_as {
-    ($format:ty, $e:expr, $after_e:expr, $e_cost:expr) => {
+    ($format:ty, $e:expr, $after_e:expr, $e_cost:expr, $power_ten:expr) => {
         impl DisplayAs<$format> for f64 {
             fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
                 super::float::Floating::from(*self)
-                    .fmt_with(f, $e, $after_e, $e_cost)
+                    .fmt_with(f, $e, $after_e, $e_cost, $power_ten)
             }
         }
         impl DisplayAs<$format> for f32 {
             fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
                 super::float::Floating::from(*self)
-                    .fmt_with(f, $e, $after_e, $e_cost)
+                    .fmt_with(f, $e, $after_e, $e_cost, $power_ten)
             }
         }
     }
 }
-display_floats_as!(HTML, "×10<sup>", "</sup>", 3);
+display_floats_as!(HTML, "×10<sup>", "</sup>", 3, Some("10<sup>"));
 
 #[test]
 fn escaping() {

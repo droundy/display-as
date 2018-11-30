@@ -33,7 +33,7 @@ impl Format for Math {
 }
 
 display_integers_as!(Math);
-display_floats_as!(Math, r"\times10^{", "}", 3);
+display_floats_as!(Math, r"\times10^{", "}", 3, Some("10^{"));
 
 #[test]
 fn escaping() {
@@ -47,5 +47,6 @@ fn escaping() {
 fn floats() {
     assert_eq!(&format!("{}", As(Math, 3.0)), "3");
     assert_eq!(&format!("{}", As(Math, 3e5)), r"3\times10^{5}");
+    assert_eq!(&format!("{}", As(Math, 1e5)), r"10^{5}");
     assert_eq!(&format!("{}", As(Math, 3e4)), "30000");
 }

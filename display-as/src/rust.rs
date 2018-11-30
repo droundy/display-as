@@ -13,7 +13,7 @@ impl Format for Rust {
 }
 
 display_integers_as!(Rust);
-display_floats_as!(Rust, "e", "", 1);
+display_floats_as!(Rust, "e", "", 1, None);
 
 #[test]
 fn escaping() {

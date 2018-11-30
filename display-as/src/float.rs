@@ -95,7 +95,8 @@ impl Floating {
     /// of characters we consider wasted when using scientific
     /// notation.
     pub fn fmt_with(&self, f: &mut Formatter,
-                    e: &str, after_e: &str, e_waste: usize) -> Result<(), Error> {
+                    e: &str, after_e: &str, e_waste: usize,
+                    power_ten: Option<&str>) -> Result<(), Error> {
         match self {
             Floating::Abnormal(s) => f.write_str(&s),
             Floating::Normal { exponent, mantissa, is_negative } => {
@@ -108,6 +109,12 @@ impl Floating {
                         f.write_str(".")?;
                         f.write_str(r)?;
                         f.write_str(e)?;
+                        exponent.fmt(f)?;
+                        f.write_str(after_e)
+                    } else if mantissa == "1" && power_ten.is_some() {
+                        // We can omit the mantissa, keeping things
+                        // pretty and compact.
+                        f.write_str(power_ten.unwrap())?;
                         exponent.fmt(f)?;
                         f.write_str(after_e)
                     } else {
@@ -145,7 +152,7 @@ impl Floating {
 
 impl Display for Floating {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        self.fmt_with(f, "e", "", 1)
+        self.fmt_with(f, "e", "", 1, None)
     }
 }
 

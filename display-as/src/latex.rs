@@ -33,7 +33,7 @@ impl Format for LaTeX {
 }
 
 display_integers_as!(LaTeX);
-display_floats_as!(LaTeX, r"$\times10^{", "}$", 3);
+display_floats_as!(LaTeX, r"$\times10^{", "}$", 3, Some("$10^{"));
 
 #[test]
 fn escaping() {
