@@ -12,7 +12,7 @@ all-features = true
 
 [dependencies]
 
-display-as-proc-macro = { version = "0.1.2", path = "../display-as-proc-macro" }
+display-as-proc-macro = { version = "0.2.0", path = "../display-as-proc-macro" }
 proc-macro-hack = "0.5"
 
 mime = "0.3.12"
