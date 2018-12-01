@@ -72,7 +72,7 @@ display_integers_as!(HTML);
 /// the other arguments.
 /// ```
 /// struct HTML;
-/// use display_as::{Format};
+/// use display_as::{Format, display_as_string};
 /// impl Format for HTML {
 ///    fn escape(f: &mut ::std::fmt::Formatter, mut s: &str) -> Result<(), ::std::fmt::Error> {
 ///        f.write_str(s) // for example I skip escaping...
@@ -81,6 +81,13 @@ display_integers_as!(HTML);
 ///    fn this_format() -> Self { HTML }
 /// }
 /// display_as::display_floats_as!(HTML, "×10<sup>", "</sup>", 3, Some("10<sup>"));
+/// fn main() {
+///   assert_eq!(&display_as_string!(HTML, 1e3), "1000");
+///   assert_eq!(&display_as_string!(HTML, 3e4), "30000");
+///   assert_eq!(&display_as_string!(HTML, 1e5), "10<sup>5</sup>");
+///   assert_eq!(&display_as_string!(HTML, 2e5), "2×10<sup>5</sup>");
+///   assert_eq!(&display_as_string!(HTML, 1e6), "10<sup>6</sup>");
+/// }
 /// ```
 #[macro_export]
 macro_rules! display_floats_as {
