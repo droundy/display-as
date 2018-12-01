@@ -43,9 +43,12 @@
 //! ## Templates!
 //!
 //! There are two template macros that you can use.  If you just want
-//! to get a string, you will use something like
-//! `display_as_string!("hello world" value)`.  If you want to
-//! implement `DisplayAs`, you will use the attribute `with_template`.
+//! to get a string out of one or more `DisplayAs` objects, you will
+//! use something like `display_as_string!("hello world" value)`.  If
+//! you want to implement `DisplayAs`, you will use the attribute
+//! `with_template`.
+//!
+
 
 extern crate mime;
 extern crate display_as_proc_macro;
