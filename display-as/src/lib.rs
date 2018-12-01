@@ -48,6 +48,82 @@
 //! you want to implement `DisplayAs`, you will use the attribute
 //! `with_template`.
 //!
+//! ### String literals
+//!
+//! The first thing you can include in a template is a string literal,
+//! which is treated literally.
+//!
+//! ```
+//! use display_as::{HTML, display_as_string};
+//! assert_eq!(&display_as_string!(HTML, "Treat this literally <" ),
+//!                                "Treat this literally <");
+//! ```
+//!
+//! ### Expressions
+//!
+//! String literals are essential to representing some other format.
+//! To include your data in the output, you can include any expression
+//! that yields a type with `DisplayAs<F>` where `F` is your format.
+//! Each expression is delimited by string literals (or the other
+//! options below).  Note that since an expression is
+//!
+//! ```
+//! use display_as::{HTML, display_as_string};
+//! let s = "This is not a literal: <";
+//! assert_eq!(&display_as_string!(HTML, s ),
+//!                                "This is not a literal: &lt;");
+//! ```
+//!
+//! ### Blocks and conditionals
+//!
+//! You can use braces to enclose any template expression.  Any rust
+//! code before the braces is treated as literal rust.  This enables
+//! you to write conditionals, match expressions, and loops.
+//!
+//! ```
+//! use display_as::{HTML, display_as_string};
+//! assert_eq!(&display_as_string!(HTML,
+//!                                for i in 1..4 {
+//!                                    "Counting " i "...\n"
+//!                                }
+//!                                "Blast off!"),
+//!                                "Counting 1...\nCounting 2...\nCounting 3...\nBlast off!");
+//! ```
+//!
+//! ### Semicolons
+//!
+//! You may also play any rust statements you wish, if you end them
+//! with a semicolon.  This enables you to define local variables.
+//!
+//! ```
+//! use display_as::{HTML, display_as_string};
+//! assert_eq!(&display_as_string!(HTML, "I am counting " let count = 5;
+//!                                      count " and again " count ),
+//!                                "I am counting 5 and again 5");
+//! ```
+//!
+//! ### Using another type
+//!
+//! You can also embed in one format a representation from another
+//! type.  This can be helpful, for instance, if you want to use
+//! MathJax to handle LaTeX math embedded in an HTML file.
+//!
+//! ```
+//! use display_as::{HTML, Math, display_as_string};
+//! assert_eq!(&display_as_string!(HTML, "The number $" 1.2e12 as Math "$"),
+//!                                r"The number $1.2\times10^{12}$");
+//! ```
+//!
+//! ### Nesting templates?
+//!
+//! I want to figure out how to enable you to nest one template in
+//! another.
+//!
+//! ```
+//! use display_as::{HTML, display_as_string};
+//! assert_eq!(&display_as_string!(HTML, "The number " let x = 5; x ),
+//!                                "The number 5");
+//! ```
 
 
 extern crate mime;

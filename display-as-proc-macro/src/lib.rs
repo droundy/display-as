@@ -134,6 +134,9 @@ fn template_to_statements(format: &proc_macro2::TokenStream, template: TokenStre
             } else {
                 next_expr.push(t);
             }
+        } else if t.to_string() == ";" {
+            toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
+            toks.push(t);
         } else if is_str(&t) {
             // First print the previous expression...
             toks.extend(expr_toks_to_stmt(&format, &mut next_expr));
