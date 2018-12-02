@@ -227,14 +227,18 @@ pub mod rouille {
     }
 }
 
+/// The `actix-web` feature flag makes any `As<F,T>` type a
+/// `actix_web::Responder`.
 #[cfg(feature = "actix-web")]
 pub mod actix {
     extern crate actix_web;
-    use actix_web::{Responder, HttpRequest, HttpResponse};
+    use self::actix_web::{Responder, HttpRequest, HttpResponse};
     use super::{Format, As, DisplayAs};
     impl<F: Format, T: DisplayAs<F>> Responder for As<F,T> {
-        fn respond_to(self, _req: &HttpRequest<S>)
-                      -> Result<HttpResponse, Self::Error> {
+        type Item = HttpResponse;
+        type Error = ::std::io::Error;
+        fn respond_to<S: 'static>(self, _req: &HttpRequest<S>)
+                                  -> Result<HttpResponse, Self::Error> {
             Ok(HttpResponse::Ok()
                .content_type(F::mime().as_ref().to_string())
                .body(format!("{}", &self)))
@@ -242,15 +246,15 @@ pub mod actix {
     }
 }
 
-/// The `gotham` feature flag makes any `As<F,T>` type a
+/// The `gotham-web` feature flag makes any `As<F,T>` type a
 /// `gotham::IntoResponse`.
-#[cfg(feature = "gotham")]
+#[cfg(feature = "gotham-web")]
 pub mod gotham {
     extern crate gotham;
     extern crate hyper;
     extern crate http;
     use super::{Format, As, DisplayAs};
-    impl<F: Format, T: DisplayAs<F>> Into<gotham::handler::IntoResponse> for As<F,T> {
+    impl<F: Format, T: DisplayAs<F>> gotham::handler::IntoResponse for As<F,T> {
         fn into_response(self, state: &gotham::state::State) -> http::Response<hyper::Body> {
             let s = format!("{}", &self);
             (http::StatusCode::OK, F::mime(), s).into_response(state)
