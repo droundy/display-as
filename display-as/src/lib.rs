@@ -46,7 +46,10 @@
 //! to get a string out of one or more `DisplayAs` objects, you will
 //! use something like `display_as_string!("hello world" value)`.  If
 //! you want to implement `DisplayAs`, you will use the attribute
-//! `with_template`.
+//! `with_template`.  In these examples I will use
+//! `display_as_string!` because that makes it easy to write testable
+//! documentation.  But in practice you will most likely primarily use
+//! the `with_template` attribute.
 //!
 //! ### String literals
 //!
@@ -124,7 +127,33 @@
 //! assert_eq!(&display_as_string!(HTML, "The number " let x = 5; x ),
 //!                                "The number 5");
 //! ```
+//!
+//! ## Differences when putting a template in a file
+//!
+//! You will most likely always put largish templates in a separate
+//! file.  This makes editing your template simpler and keeps things
+//! in general easier.  The template language for templates held in a
+//! distinct file has one differnce from those shown above: the file
+//! always begins and ends with string literals, but their initial and
+//! final quotes respectively are omitted.  Furthermore, the first and
+//! last string literals must be "raw" literals with a number of #
+//! signs equal to the maximum used in the template.  I suggest using
+//! an equal number of # signs for all string literals in a given
+//! template.  Thus a template might look like:
+//!
+//! ```ignore
+//! <html>
+//!   <body>
+//!     "## self.title r##"
+//!   </body>
+//! </html>
+//! ```
 
+//! You can see that the quotes appear "inside out."  This is
+//! intentional, so that for most formats the quotes will appear to
+//! enclose the rust code rather than everything else, and as a result
+//! editors will hopefully be able to do the "right thing" for the
+//! template format (e.g. HTML in this case).
 
 extern crate mime;
 extern crate display_as_proc_macro;
