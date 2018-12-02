@@ -242,6 +242,22 @@ pub mod actix {
     }
 }
 
+/// The `gotham` feature flag makes any `As<F,T>` type a
+/// `gotham::IntoResponse`.
+#[cfg(feature = "gotham")]
+pub mod gotham {
+    extern crate gotham;
+    extern crate hyper;
+    extern crate http;
+    use super::{Format, As, DisplayAs};
+    impl<F: Format, T: DisplayAs<F>> Into<gotham::handler::IntoResponse> for As<F,T> {
+        fn into_response(self, state: &gotham::state::State) -> http::Response<hyper::Body> {
+            let s = format!("{}", &self);
+            (http::StatusCode::OK, F::mime(), s).into_response(state)
+        }
+    }
+}
+
 impl<F: Format> DisplayAs<F> for String {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         F::escape(f, self)
