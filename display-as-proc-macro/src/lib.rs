@@ -127,10 +127,27 @@ fn template_to_statements(format: &proc_macro2::TokenStream, template: TokenStre
     for t in template.into_iter() {
         if let TokenTree::Group(g) = t.clone() {
             if g.delimiter() == Delimiter::Brace {
-                toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
-                toks.push(TokenTree::Group(
-                    Group::new(Delimiter::Brace,
-                               template_to_statements(format, g.stream()))));
+                if next_expr.last().map(|x| x.to_string()) == Some("=".to_string()) &&
+                    next_expr.first().map(|x| x.to_string()) == Some("let".to_string())
+                {
+                    // We are doing an assignment to a template
+                    // thingy, so let's create a DisplayAs thingy
+                    // rather than adding the stuff right now.
+                    toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
+                    let actions = proc_to_two(template_to_statements(format, g.stream()));
+                    toks.extend(two_to_proc(quote!{
+                        |_format: #format, __f: &mut ::std::fmt::Formatter|
+                             -> Result<(), ::std::fmt::Error> {
+                            { #actions };
+                            Ok(())
+                        }
+                    }).into_iter());
+                } else {
+                    toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
+                    toks.push(TokenTree::Group(
+                        Group::new(Delimiter::Brace,
+                                   template_to_statements(format, g.stream()))));
+                }
             } else {
                 next_expr.push(t);
             }

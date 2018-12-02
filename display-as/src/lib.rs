@@ -117,15 +117,21 @@
 //!                                r"The number $1.2\times10^{12}$");
 //! ```
 //!
-//! ### Nesting templates?
+//! ### Saving a portion of a template for reuse
 //!
-//! I want to figure out how to enable you to nest one template in
-//! another.
+//! You can also save a template expression using a let statement,
+//! provided the template expression is enclosed in braces.  This
+//! allows you to achieve goals similar to the base templates in
+//! Jinja2.  (Once we have an include feature... Example to come in
+//! the future.)
 //!
 //! ```
 //! use display_as::{HTML, display_as_string};
-//! assert_eq!(&display_as_string!(HTML, "The number " let x = 5; x ),
-//!                                "The number 5");
+//! assert_eq!(&display_as_string!(HTML,
+//!                                let x = 1;
+//!                                let announce = { "number " x };
+//!                                "The " announce " is silly " announce),
+//!                                "The number 1 is silly number 1");
 //! ```
 //!
 //! ## Differences when putting a template in a file
@@ -200,6 +206,21 @@ pub trait Format {
 pub trait DisplayAs<F: Format> {
     /// Formats the value using the given formatter.
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error>;
+}
+
+impl<F: Format, C: for <'a> Fn(F, &'a mut Formatter) -> Result<(), Error>> DisplayAs<F> for C {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        self(F::this_format(), f)
+    }
+}
+
+#[test]
+fn test_closure() {
+    let x = |_format: HTML, __f: &mut Formatter| -> Result<(), Error> {
+        __f.write_str("hello world")?;
+        Ok(())
+    };
+    assert_eq!("hello world", &format!("{}", As(HTML, x)));
 }
 
 /// Choose to `Display` this type using `Format` `F`.
