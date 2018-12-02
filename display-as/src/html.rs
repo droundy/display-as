@@ -24,6 +24,7 @@ impl Format for HTML {
         }
         f.write_str(s)
     }
+    /// The MIME type for HTML is `mime::TEXT_HTML_UTF_8`.
     fn mime() -> mime::Mime { return mime::TEXT_HTML_UTF_8; }
     fn this_format() -> Self { HTML }
 }
