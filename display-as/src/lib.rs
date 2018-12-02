@@ -102,7 +102,7 @@
 //!                                "I am counting 5 and again 5");
 //! ```
 //!
-//! ### Using another type
+//! ### Embedding a different format
 //!
 //! You can also embed in one format a representation from another
 //! type.  This can be helpful, for instance, if you want to use
