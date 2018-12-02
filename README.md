@@ -1,5 +1,7 @@
 # DisplayAs
 
+[![Documentation](https://docs.rs/display-as/badge.svg)](https://docs.rs/display-as)
+
 These crates creates rusty templates that are evaluated at
 compile-time (much like [askama](https://docs.rs/askama)).
 `DisplayAs` is explicitly designed to support multiple output formats
