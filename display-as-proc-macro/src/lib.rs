@@ -237,6 +237,7 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
                 let mut contents = String::new();
                 f.read_to_string(&mut contents)
                     .expect("something went wrong reading the file");
+                let raw_template_len = contents.len();
                 let pounds = count_pounds(&contents);
                 contents.write_str(&pounds).unwrap();
                 contents.write_str("\"").unwrap();
@@ -244,9 +245,9 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
                 template.write_str(&pounds).unwrap();
                 template.write_str("\"").unwrap();
                 template.write_str(&contents).unwrap();
-                template.write_str("  ({ let _dummy = include_str!(\"").unwrap();
+                template.write_str("  ({ assert_eq!(include_str!(\"").unwrap();
                 template.write_str(&pathname).unwrap();
-                template.write_str("\"); \"\"})").unwrap();
+                write!(template, "\").len(), {}); \"\"}})", raw_template_len).unwrap();
                 template.parse().expect("trouble parsing file")
             } else {
                 panic!("No such file: {}", path.display())
