@@ -10,7 +10,7 @@ extern crate glob;
 
 use proc_macro::{TokenStream, TokenTree, Group, Delimiter};
 use proc_macro_hack::proc_macro_hack;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::Read;
 use std::fmt::Write;
@@ -119,6 +119,30 @@ fn expr_toks_to_stmt(format: &proc_macro2::TokenStream, expr: &mut Vec<TokenTree
 fn expr_toks_to_conditional(expr: &mut Vec<TokenTree>) -> TokenStream {
     expr.drain(..).collect()
 }
+
+fn read_template_file(dirname: &Path, pathname: &str) -> TokenStream {
+    let path = dirname.join(&pathname);
+    if let Ok(mut f) = File::open(&path) {
+        let mut contents = String::new();
+        f.read_to_string(&mut contents)
+            .expect("something went wrong reading the file");
+        let raw_template_len = contents.len();
+        let pounds = count_pounds(&contents);
+        contents.write_str(&pounds).unwrap();
+        contents.write_str("\"").unwrap();
+        let mut template = "r".to_string();
+        template.write_str(&pounds).unwrap();
+        template.write_str("\"").unwrap();
+        template.write_str(&contents).unwrap();
+        template.write_str("  ({ assert_eq!(include_str!(\"").unwrap();
+        template.write_str(&pathname).unwrap();
+        write!(template, "\").len(), {}); \"\"}})", raw_template_len).unwrap();
+        template.parse().expect("trouble parsing file")
+    } else {
+        panic!("No such file: {}", path.display())
+    }
+}
+
 
 fn template_to_statements(format: &proc_macro2::TokenStream, template: TokenStream)
                           -> TokenStream {
@@ -232,26 +256,7 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
                 } else {
                     PathBuf::from(".")
                 };
-            let path = sourcedir.join(&pathname);
-            if let Ok(mut f) = File::open(&path) {
-                let mut contents = String::new();
-                f.read_to_string(&mut contents)
-                    .expect("something went wrong reading the file");
-                let raw_template_len = contents.len();
-                let pounds = count_pounds(&contents);
-                contents.write_str(&pounds).unwrap();
-                contents.write_str("\"").unwrap();
-                let mut template = "r".to_string();
-                template.write_str(&pounds).unwrap();
-                template.write_str("\"").unwrap();
-                template.write_str(&contents).unwrap();
-                template.write_str("  ({ assert_eq!(include_str!(\"").unwrap();
-                template.write_str(&pathname).unwrap();
-                write!(template, "\").len(), {}); \"\"}})", raw_template_len).unwrap();
-                template.parse().expect("trouble parsing file")
-            } else {
-                panic!("No such file: {}", path.display())
-            }
+            read_template_file(&sourcedir, &pathname)
         } else {
             input
         };
