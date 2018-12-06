@@ -204,9 +204,9 @@
 //! <html>
 //!   <ul>
 //!
-//!    // This is buggy:  I want to iterate, but it fails!
-//!    for s in self.students.iter() {
-//!      "<li>" s "</li>"
+//!   // This is buggy:  I want to iterate, but it fails!
+//!   for s in self.students.iter() {
+//!     "<li>" s "</li>"
 //!   }
 //!
 //!   </ul>
