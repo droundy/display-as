@@ -15,14 +15,17 @@ use std::fs::File;
 use std::io::Read;
 use std::fmt::Write;
 
-fn find_me(pattern: &str) -> Option<PathBuf> {
+fn find_source(tokens: TokenStream) -> Option<PathBuf> {
     for path in glob::glob("**/*.rs").unwrap() {
         if let Ok(path) = path {
             if let Ok(mut f) = File::open(&path) {
                 let mut contents = String::new();
                 f.read_to_string(&mut contents).ok();
-                if contents.contains(pattern) {
-                    return Some(path.to_owned());
+                if let Ok(all_tokens) = contents.parse::<TokenStream>() {
+                    // This can be parsed
+                    if all_tokens.to_string().contains(&tokens.to_string()) {
+                        return Some(path.to_owned());
+                    }
                 }
             }
         }
@@ -227,6 +230,14 @@ fn template_to_statements(format: &proc_macro2::TokenStream, template: TokenStre
 /// number of `#` signs throughout.
 #[proc_macro_attribute]
 pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
+    let sourcefile = find_source(input.clone()).expect("Unable to locate source file");
+    let sourcedir =
+        if let Some(d) = sourcefile.parent() {
+            PathBuf::from(d)
+        } else {
+            PathBuf::from(".")
+        };
+
     let mut impl_toks: Vec<_> = my_impl.into_iter().collect();
     if &impl_toks[0].to_string() != "impl" || impl_toks.len() < 3 {
         panic!("with_template can only be applied to an impl of DisplayAs");
@@ -249,13 +260,6 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     let input =
         if input_vec.len() == 1 {
             let pathname = input_vec[0].to_string().replace("\"", "");
-            let sourcefile = find_me(&pathname).expect("Unable to locate source file");
-            let sourcedir =
-                if let Some(d) = sourcefile.parent() {
-                    PathBuf::from(d)
-                } else {
-                    PathBuf::from(".")
-                };
             read_template_file(&sourcedir, &pathname)
         } else {
             input
