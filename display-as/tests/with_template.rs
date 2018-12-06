@@ -78,3 +78,22 @@ fn from_file_include() {
                                                          age: 2 })),
                "FromFile: minor Miri (THE END)\n\n");
 }
+
+
+struct FromFileBase {
+    name: String,
+    age: usize,
+}
+
+#[with_template("from-file-base.html")]
+impl DisplayAs<HTML> for FromFileBase {}
+
+#[test]
+fn from_file_base() {
+    assert_eq!(&format!("{}", As(HTML, FromFileBase { name: "David".to_string(),
+                                                         age: 45 })),
+               "FromFile: grown-up David who is 45 years old (THE END)\n\n");
+    assert_eq!(&format!("{}", As(HTML, FromFileBase { name: "Miri".to_string(),
+                                                         age: 2 })),
+               "FromFile: minor Miri (THE END)\n\n");
+}

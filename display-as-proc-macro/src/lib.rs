@@ -140,9 +140,7 @@ fn read_template_file(dirname: &Path, pathname: &str) -> TokenStream {
         template.write_str("  ({ assert_eq!(include_str!(\"").unwrap();
         template.write_str(&pathname).unwrap();
         write!(template, "\").len(), {}); \"\"}}); ", raw_template_len).unwrap();
-        let x: TokenStream = template.parse().expect("trouble parsing file");
-        println!("\n\nparsed {:?} to:\n{}\n\n", pathname, x.to_string());
-        x
+        template.parse().expect("trouble parsing file")
     } else {
         panic!("No such file: {}", path.display())
     }
