@@ -131,16 +131,18 @@ fn read_template_file(dirname: &Path, pathname: &str) -> TokenStream {
             .expect("something went wrong reading the file");
         let raw_template_len = contents.len();
         let pounds = count_pounds(&contents);
-        contents.write_str(&pounds).unwrap();
         contents.write_str("\"").unwrap();
+        contents.write_str(&pounds).unwrap();
         let mut template = "r".to_string();
         template.write_str(&pounds).unwrap();
         template.write_str("\"").unwrap();
         template.write_str(&contents).unwrap();
         template.write_str("  ({ assert_eq!(include_str!(\"").unwrap();
         template.write_str(&pathname).unwrap();
-        write!(template, "\").len(), {}); \"\"}})", raw_template_len).unwrap();
-        template.parse().expect("trouble parsing file")
+        write!(template, "\").len(), {}); \"\"}}); ", raw_template_len).unwrap();
+        let x: TokenStream = template.parse().expect("trouble parsing file");
+        println!("\n\nparsed {:?} to:\n{}\n\n", pathname, x.to_string());
+        x
     } else {
         panic!("No such file: {}", path.display())
     }
@@ -153,9 +155,11 @@ fn template_to_statements(dir: &Path, format: &proc_macro2::TokenStream, templat
     let mut next_expr: Vec<TokenTree> = Vec::new();
     for t in template.into_iter() {
         if let TokenTree::Group(g) = t.clone() {
+            let next_expr_len = next_expr.len();
             if g.delimiter() == Delimiter::Brace {
-                if next_expr.last().map(|x| x.to_string()) == Some("=".to_string()) &&
-                    next_expr.first().map(|x| x.to_string()) == Some("let".to_string())
+                if next_expr_len > 2 &&
+                    &next_expr[next_expr_len-1].to_string() == "=" &&
+                    &next_expr[0].to_string() == "let"
                 {
                     // We are doing an assignment to a template
                     // thingy, so let's create a DisplayAs thingy
@@ -175,6 +179,22 @@ fn template_to_statements(dir: &Path, format: &proc_macro2::TokenStream, templat
                         Group::new(Delimiter::Brace,
                                    template_to_statements(dir, format, g.stream()))));
                 }
+            } else if g.delimiter() == Delimiter::Parenthesis && next_expr.len() >= 2 &&
+                &next_expr[next_expr_len-1].to_string() == "!" &&
+                &next_expr[next_expr_len-2].to_string() == "include"
+            {
+                next_expr.pop(); next_expr.pop();  // remove the include!
+                let filenames: Vec<_> = g.stream().into_iter().collect();
+                if filenames.len() != 1 {
+                    panic!("include! macro within a template must have one argument, a string literal");
+                }
+                let filename = filenames[0].to_string().replace("\"", "");
+                let templ = read_template_file(dir, &filename);
+                let statements = template_to_statements(dir, format, templ);
+                next_expr.extend(statements.into_iter());
+                next_expr.extend(to_tokens(";").into_iter());
+                toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
+                toks.push(t);
             } else {
                 next_expr.push(t);
             }

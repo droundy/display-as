@@ -60,3 +60,21 @@ fn from_file() {
                                                    age: 2 })),
                "FromFile: minor Miri (THE END)\n");
 }
+
+struct FromFileInclude {
+    name: String,
+    age: usize,
+}
+
+#[with_template("from-file-include.html")]
+impl DisplayAs<HTML> for FromFileInclude {}
+
+#[test]
+fn from_file_include() {
+    assert_eq!(&format!("{}", As(HTML, FromFileInclude { name: "David".to_string(),
+                                                         age: 45 })),
+               "FromFile: grown-up David who is 45 years old (THE END)\n\n");
+    assert_eq!(&format!("{}", As(HTML, FromFileInclude { name: "Miri".to_string(),
+                                                         age: 2 })),
+               "FromFile: minor Miri (THE END)\n\n");
+}
