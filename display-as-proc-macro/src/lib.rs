@@ -84,7 +84,7 @@ pub fn display_as_string(input: TokenStream) -> TokenStream {
         panic!("display_as_string! needs a Format followed by a comma");
     }
 
-    let statements = proc_to_two(template_to_statements(&format, tokens.collect()));
+    let statements = proc_to_two(template_to_statements("templates".as_ref(), &format, tokens.collect()));
 
     quote!(
         {
@@ -147,7 +147,7 @@ fn read_template_file(dirname: &Path, pathname: &str) -> TokenStream {
 }
 
 
-fn template_to_statements(format: &proc_macro2::TokenStream, template: TokenStream)
+fn template_to_statements(dir: &Path, format: &proc_macro2::TokenStream, template: TokenStream)
                           -> TokenStream {
     let mut toks: Vec<TokenTree> = Vec::new();
     let mut next_expr: Vec<TokenTree> = Vec::new();
@@ -161,7 +161,7 @@ fn template_to_statements(format: &proc_macro2::TokenStream, template: TokenStre
                     // thingy, so let's create a DisplayAs thingy
                     // rather than adding the stuff right now.
                     toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
-                    let actions = proc_to_two(template_to_statements(format, g.stream()));
+                    let actions = proc_to_two(template_to_statements(dir, format, g.stream()));
                     toks.extend(two_to_proc(quote!{
                         |_format: #format, __f: &mut ::std::fmt::Formatter|
                              -> Result<(), ::std::fmt::Error> {
@@ -173,7 +173,7 @@ fn template_to_statements(format: &proc_macro2::TokenStream, template: TokenStre
                     toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
                     toks.push(TokenTree::Group(
                         Group::new(Delimiter::Brace,
-                                   template_to_statements(format, g.stream()))));
+                                   template_to_statements(dir, format, g.stream()))));
                 }
             } else {
                 next_expr.push(t);
@@ -264,7 +264,7 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
         } else {
             input
         };
-    let statements = proc_to_two(template_to_statements(&my_format, input));
+    let statements = proc_to_two(template_to_statements(&sourcedir, &my_format, input));
 
     let out = quote!{
         {
