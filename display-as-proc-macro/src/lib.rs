@@ -301,6 +301,6 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     }).into_iter());
     let new_impl = new_impl.into_iter().collect();
 
-    // println!("new_impl is {}", &new_impl);
+    println!("new_impl is {}", &new_impl);
     new_impl
 }

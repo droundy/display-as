@@ -1,5 +1,4 @@
 #![deny(missing_docs)]
-
 //! This template crate uses and defines a `DisplayAs` trait, which
 //! allows a type to be displayed in a particular format.
 //!
@@ -44,7 +43,7 @@
 //!
 //! There are two template macros that you can use.  If you just want
 //! to get a string out of one or more `DisplayAs` objects, you will
-//! use something like `display_as_string!("hello world" value)`.  If
+//! use something like `display_as_string!(HTML, "hello world" value)`.  If
 //! you want to implement `DisplayAs`, you will use the attribute
 //! `with_template`.  In these examples I will use
 //! `display_as_string!` because that makes it easy to write testable
@@ -160,6 +159,62 @@
 //! enclose the rust code rather than everything else, and as a result
 //! editors will hopefully be able to do the "right thing" for the
 //! template format (e.g. HTML in this case).
+
+#![cfg_attr(feature="docinclude", feature(external_doc))]
+//! ## Using `include!("...")` within a template
+//!
+//! Now I will demonstrate how you can include template files within
+//! other template files by using the `include!` macro within a
+//! template.  To demonstrate this, we will need a few template files.
+//!
+//! We will begin with a "base" template that describes how a page is
+//! laid out.
+//! #### `base.html`:
+//! ```ignore
+#![cfg_attr(feature="docinclude", doc(include = "base.html"))]
+//! ```
+//! We can have a template for how we will display students...
+//! #### `student.html`:
+//! ```ignore
+#![cfg_attr(feature="docinclude", doc(include = "student.html"))]
+//!```
+//! Finally, an actual web page describing a class!
+//! #### `class.html`:
+//! ```ignore
+#![cfg_attr(feature="docinclude", doc(include = "class.html"))]
+//! ```
+//! Now to put all this together, we'll need some rust code.
+//!
+//! ```
+//! use display_as::{DisplayAs, HTML, display_as_string, with_template};
+//! struct Student { name: &'static str };
+//! #[with_template("student.html")]
+//! impl DisplayAs<HTML> for Student {}
+//!
+//! struct Class { coursename: &'static str, coursenumber: usize, students: Vec<Student> };
+//! #[with_template("class.html")]
+//! impl DisplayAs<HTML> for Class {}
+//!
+//! let myclass = Class {
+//!       coursename: "Templates",
+//!       coursenumber: 365,
+//!       students: vec![Student {name: "David"}, Student {name: "Joel"}],
+//! };
+//! assert_eq!(&display_as_string!(HTML, myclass), r#"<title>PH365: Templates</title>
+//! <html>
+//!   <ul>
+//!
+//!    // This is buggy:  I want to iterate, but it fails!
+//!    for s in self.students.iter() {
+//!      "<li>" s "</li>"
+//!   }
+//!
+//!   </ul>
+//! </html>
+//!
+//!
+//!"#);
+//! ```
 
 extern crate mime;
 extern crate display_as_proc_macro;
