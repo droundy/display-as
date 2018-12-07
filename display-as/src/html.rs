@@ -1,8 +1,8 @@
-//! Format as HTML
+//! [Format] as HTML
 
 use super::*;
 
-/// Format as HTML.
+/// [Format] as HTML.
 pub struct HTML;
 impl Format for HTML {
     fn escape(f: &mut Formatter, mut s: &str) -> Result<(), Error> {
@@ -24,7 +24,7 @@ impl Format for HTML {
         }
         f.write_str(s)
     }
-    /// The MIME type for HTML is `mime::TEXT_HTML_UTF_8`.
+    /// The MIME type for HTML is [mime::TEXT_HTML_UTF_8].
     fn mime() -> mime::Mime {
         return mime::TEXT_HTML_UTF_8;
     }
@@ -43,7 +43,7 @@ macro_rules! display_as_from_display {
     };
 }
 
-/// Conveniently implement DisplayAs for integers for a new `Format`.
+/// Conveniently implement [DisplayAs] for integers for a new [Format].
 #[macro_export]
 macro_rules! display_integers_as {
     ($format:ty) => {
@@ -64,12 +64,12 @@ macro_rules! display_integers_as {
 
 display_integers_as!(HTML);
 
-/// Inconveniently implement DisplayAs for floats for a new `Format`.
+/// Inconveniently implement [DisplayAs] for floats for a new [Format].
 ///
 /// This is inconvenient because we want to enable pretty formatting
 /// of both large and small numbers in whatever markup language we are
 /// using.  The first argument of the macro is the format that wants
-/// implementation of `DisplayAs` for floats.
+/// implementation of [DisplayAs] for floats.
 ///
 /// For partial documentation of the other files, see
 /// [Floating::fmt_with](float/enum.Floating.html#method.fmt_with).

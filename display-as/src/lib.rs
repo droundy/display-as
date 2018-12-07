@@ -20,11 +20,11 @@
 //! using these Formats, rather than on defining your own (which also
 //! isn't too hard).  A format is a zero-size type that has a rule for
 //! escaping strings and an associated MIME type.  The builtin formats
-//! include `HTML`, `LaTeX`, and `Math` (which is math-mode LaTeX).
+//! include [HTML], [LaTeX], and [Math] (which is math-mode LaTeX).
 //!
-//! ## `DisplayAs<F>`
+//! ## [DisplayAs]`<F>`
 //!
-//! The `DisplayAs<F: Format>` trait is entirely analogous to the `Display` trait
+//! The `[DisplayAs]<F: Format>` trait is entirely analogous to the [Display](std::fmt::Display) trait
 //! in the standard library, except that it is parametrized by a
 //! [Format] so you can have different representations for the same
 //! type in different formats.  This also makes it harder to
@@ -34,7 +34,7 @@
 //! for the included Formats.  If you encounter a type that you wish
 //! had [DisplayAs] implemented for a given format, just let me know.
 //! You can manually implement [DisplayAs] for any of your own types
-//! (it's not worse than implementing `Display`) but that isn't how
+//! (it's not worse than implementing [Display](std::fmt::Display)) but that isn't how
 //! you are intended to do things (except perhaps in very simple
 //! cases, like a wrapper around an integer).  Instead you will want
 //! to use a template to implement [DisplayAs] for your own types.
@@ -45,10 +45,10 @@
 //! to get a string out of one or more [DisplayAs] objects, you will
 //! use something like `display_as_string!(HTML, "hello world" value)`.  If
 //! you want to implement [DisplayAs], you will use the attribute
-//! `with_template`.  In these examples I will use
-//! `display_as_string!` because that makes it easy to write testable
+//! [with_template!].  In these examples I will use
+//! [display_as_string!] because that makes it easy to write testable
 //! documentation.  But in practice you will most likely primarily use
-//! the `with_template` attribute.
+//! the [with_template] attribute.
 //!
 //! ### String literals
 //!
@@ -63,9 +63,9 @@
 //!
 //! ### Expressions
 //!
-//! String literals are essential to representing some other format.
+//! String literals are essential to representing some other [Format].
 //! To include your data in the output, you can include any expression
-//! that yields a type with `DisplayAs<F>` where `F` is your format.
+//! that yields a type with [DisplayAs]`<F>` where `F` is your [Format].
 //! Each expression is delimited by string literals (or the other
 //! options below).  Note that since an expression is
 //!
@@ -252,12 +252,12 @@ pub trait Format {
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error>;
     /// The mime type of this format.
     fn mime() -> mime::Mime;
-    /// Return an actual [Format] for use in `As` below.
+    /// Return an actual [Format] for use in [As] below.
     fn this_format() -> Self;
 }
 
-/// This trait is analogous to `Display`, but will display the data in
-/// `F` format.
+/// This trait is analogous to [Display](std::fmt::Display), but will display the data in
+/// `F` [Format].
 pub trait DisplayAs<F: Format> {
     /// Formats the value using the given formatter.
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error>;
@@ -283,7 +283,7 @@ fn test_closure() {
     assert_eq!("hello world", &format!("{}", x.display_as(HTML)));
 }
 
-/// Choose to `Display` this type using a particular [Format] `F`.
+/// Choose to [Display](std::fmt::Display) this type using a particular [Format] `F`.
 pub struct As<'a, F: Format, T: DisplayAs<F> + ?Sized> {
     inner: &'a T,
     phantom: std::marker::PhantomData<F>,
@@ -303,7 +303,7 @@ impl<'a, F: Format, T: DisplayAs<F> + ?Sized> Display for As<'a, F, T> {
 }
 
 /// The `rouille` feature flag enables conversion of any `As<F,T>`
-/// type into a `rouille::Response`.  Note that it is necessary to be
+/// type into a [rouille::Response].  Note that it is necessary to be
 /// explicit about the format because a given type `T` may be
 /// displayed in multiple different formats.
 #[cfg(feature = "rouille")]
@@ -318,8 +318,8 @@ pub mod rouille {
     }
 }
 
-/// The `actix-web` feature flag makes any `As<F,T>` type a
-/// `actix_web::Responder`.
+/// The `actix-web` feature flag makes any [As] type a
+/// [actix_web::Responder].
 #[cfg(feature = "actix-web")]
 pub mod actix {
     extern crate actix_web;
@@ -339,8 +339,8 @@ pub mod actix {
     }
 }
 
-/// The `gotham-web` feature flag makes any `As<F,T>` type a
-/// `gotham::IntoResponse`.
+/// The `gotham-web` feature flag makes any [As] type a
+/// [gotham::IntoResponse].
 #[cfg(feature = "gotham-web")]
 pub mod gotham {
     extern crate gotham;

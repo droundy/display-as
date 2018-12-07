@@ -1,8 +1,8 @@
-//! Internal helper code required for `display_floats_as`.
+//! Internal helper code required for [display_floats_as].
 //!
 //! The standard library does nice exact conversions to decimal, but
 //! lacks a nice output format, so this module helps to do that.  **Do
-//! not use this code direcly, but instead call `display_floats_as`!**
+//! not use this code direcly, but instead call [display_floats_as]!**
 
 use std::fmt::{Display, Error, Formatter};
 use std::str::FromStr;
