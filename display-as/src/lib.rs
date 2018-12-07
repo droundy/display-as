@@ -309,7 +309,7 @@ impl<'a, F: Format, T: DisplayAs<F> + ?Sized> Display for As<'a, F, T> {
 #[cfg(feature = "rouille")]
 pub mod rouille {
     extern crate rouille;
-    use super::{DisplayAs, Format, As};
+    use super::{As, DisplayAs, Format};
     impl<F: Format, T: DisplayAs<F>> Into<rouille::Response> for As<F, T> {
         fn into(self) -> rouille::Response {
             let s = format!("{}", &self);
@@ -324,7 +324,7 @@ pub mod rouille {
 pub mod actix {
     extern crate actix_web;
     use self::actix_web::{HttpRequest, HttpResponse, Responder};
-    use super::{DisplayAs, Format, As};
+    use super::{As, DisplayAs, Format};
     impl<F: Format, T: DisplayAs<F>> Responder for As<F, T> {
         type Item = HttpResponse;
         type Error = ::std::io::Error;
@@ -346,7 +346,7 @@ pub mod gotham {
     extern crate gotham;
     extern crate http;
     extern crate hyper;
-    use super::{DisplayAs, Format, As};
+    use super::{As, DisplayAs, Format};
     impl<F: Format, T: DisplayAs<F>> gotham::handler::IntoResponse for As<F, T> {
         fn into_response(self, state: &gotham::state::State) -> http::Response<hyper::Body> {
             let s = format!("{}", &self);
