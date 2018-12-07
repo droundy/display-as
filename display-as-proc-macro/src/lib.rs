@@ -68,22 +68,22 @@ fn count_pounds(x: &str) -> &'static str {
 ///
 /// You can think of this as being kind of like `format!` on strange drugs.
 #[proc_macro_hack]
-pub fn display_as_string(input: TokenStream) -> TokenStream {
+pub fn format_as(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
     let format = if let Some(format) = tokens.next() {
         proc_to_two(format.into())
     } else {
-        panic!("display_as_string! needs a Format as its first argument")
+        panic!("format_as! needs a Format as its first argument")
     };
     if let Some(comma) = tokens.next() {
         if &comma.to_string() != "," {
             panic!(
-                "display_as_string! needs a Format followed by a comma, not {}",
+                "format_as! needs a Format followed by a comma, not {}",
                 comma.to_string()
             );
         }
     } else {
-        panic!("display_as_string! needs a Format followed by a comma");
+        panic!("format_as! needs a Format followed by a comma");
     }
 
     let statements = proc_to_two(template_to_statements(

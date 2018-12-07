@@ -43,10 +43,10 @@
 //!
 //! There are two template macros that you can use.  If you just want
 //! to get a string out of one or more [DisplayAs] objects, you will
-//! use something like `display_as_string!(HTML, "hello world" value)`.  If
+//! use something like `format_as!(HTML, "hello world" value)`.  If
 //! you want to implement [DisplayAs], you will use the attribute
 //! [with_template!].  In these examples I will use
-//! [display_as_string!] because that makes it easy to write testable
+//! [format_as!] because that makes it easy to write testable
 //! documentation.  But in practice you will most likely primarily use
 //! the [with_template] attribute.
 //!
@@ -56,9 +56,9 @@
 //! which is treated literally.
 //!
 //! ```
-//! use display_as::{HTML, display_as_string};
-//! assert_eq!(&display_as_string!(HTML, "Treat this literally <" ),
-//!                                "Treat this literally <");
+//! use display_as::{HTML, format_as};
+//! assert_eq!(&format_as!(HTML, "Treat this literally <" ),
+//!            "Treat this literally <");
 //! ```
 //!
 //! ### Expressions
@@ -70,10 +70,10 @@
 //! options below).  Note that since an expression is
 //!
 //! ```
-//! use display_as::{HTML, display_as_string};
+//! use display_as::{HTML, format_as};
 //! let s = "This is not a literal: <";
-//! assert_eq!(&display_as_string!(HTML, s ),
-//!                                "This is not a literal: &lt;");
+//! assert_eq!(&format_as!(HTML, s ),
+//!            "This is not a literal: &lt;");
 //! ```
 //!
 //! ### Blocks and conditionals
@@ -83,13 +83,13 @@
 //! you to write conditionals, match expressions, and loops.
 //!
 //! ```
-//! use display_as::{HTML, display_as_string};
-//! assert_eq!(&display_as_string!(HTML,
-//!                                for i in 1..4 {
-//!                                    "Counting " i "...\n"
-//!                                }
-//!                                "Blast off!"),
-//!                                "Counting 1...\nCounting 2...\nCounting 3...\nBlast off!");
+//! use display_as::{HTML, format_as};
+//! assert_eq!(&format_as!(HTML,
+//!                        for i in 1..4 {
+//!                            "Counting " i "...\n"
+//!                        }
+//!                        "Blast off!"),
+//!            "Counting 1...\nCounting 2...\nCounting 3...\nBlast off!");
 //! ```
 //!
 //! ### Semicolons
@@ -98,10 +98,10 @@
 //! with a semicolon.  This enables you to define local variables.
 //!
 //! ```
-//! use display_as::{HTML, display_as_string};
-//! assert_eq!(&display_as_string!(HTML, "I am counting " let count = 5;
-//!                                      count " and again " count ),
-//!                                "I am counting 5 and again 5");
+//! use display_as::{HTML, format_as};
+//! assert_eq!(&format_as!(HTML, "I am counting " let count = 5;
+//!                              count " and again " count ),
+//!            "I am counting 5 and again 5");
 //! ```
 //!
 //! ### Embedding a different format
@@ -111,9 +111,9 @@
 //! MathJax to handle LaTeX math embedded in an HTML file.
 //!
 //! ```
-//! use display_as::{HTML, Math, display_as_string};
-//! assert_eq!(&display_as_string!(HTML, "The number $" 1.2e12 as Math "$"),
-//!                                r"The number $1.2\times10^{12}$");
+//! use display_as::{HTML, Math, format_as};
+//! assert_eq!(&format_as!(HTML, "The number $" 1.2e12 as Math "$"),
+//!            r"The number $1.2\times10^{12}$");
 //! ```
 //!
 //! ### Saving a portion of a template for reuse
@@ -125,12 +125,12 @@
 //! the future.)
 //!
 //! ```
-//! use display_as::{HTML, display_as_string};
-//! assert_eq!(&display_as_string!(HTML,
-//!                                let x = 1;
-//!                                let announce = { "number " x };
-//!                                "The " announce " is silly " announce),
-//!                                "The number 1 is silly number 1");
+//! use display_as::{HTML, format_as};
+//! assert_eq!(&format_as!(HTML,
+//!                        let x = 1;
+//!                        let announce = { "number " x };
+//!                        "The " announce " is silly " announce),
+//!            "The number 1 is silly number 1");
 //! ```
 //!
 //! ## Differences when putting a template in a file
@@ -186,7 +186,7 @@
 //! Now to put all this together, we'll need some rust code.
 //!
 //! ```
-//! use display_as::{DisplayAs, HTML, display_as_string, with_template};
+//! use display_as::{DisplayAs, HTML, format_as, with_template};
 //! struct Student { name: &'static str };
 //! #[with_template("student.html")]
 //! impl DisplayAs<HTML> for Student {}
@@ -200,7 +200,7 @@
 //!       coursenumber: 365,
 //!       students: vec![Student {name: "David"}, Student {name: "Joel"}],
 //! };
-//! assert_eq!(&display_as_string!(HTML, myclass), r#"<title>PH365: Templates</title>
+//! assert_eq!(&format_as!(HTML, myclass), r#"<title>PH365: Templates</title>
 //! <html>
 //!   <ul>
 //!
@@ -221,7 +221,7 @@ extern crate mime;
 extern crate proc_macro_hack;
 
 #[proc_macro_hack]
-pub use display_as_proc_macro::display_as_string;
+pub use display_as_proc_macro::format_as;
 use proc_macro_hack::proc_macro_hack;
 
 /// Can I write doc here?
