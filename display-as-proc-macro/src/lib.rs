@@ -107,6 +107,62 @@ pub fn format_as(input: TokenStream) -> TokenStream {
     .into()
 }
 
+/// Write the given template to a file.
+///
+/// You can think of this as being kind of like `write!` on strange drugs.
+#[proc_macro_hack]
+pub fn write_as(input: TokenStream) -> TokenStream {
+    let mut tokens = input.into_iter();
+    let format = if let Some(format) = tokens.next() {
+        proc_to_two(format.into())
+    } else {
+        panic!("write_as! needs a Format as its first argument")
+    };
+    if let Some(comma) = tokens.next() {
+        if &comma.to_string() != "," {
+            panic!(
+                "write_as! needs a Format followed by a comma, not {}",
+                comma.to_string()
+            );
+        }
+    } else {
+        panic!("write_as! needs a Format followed by a comma");
+    }
+
+    let mut writer: Vec<TokenTree> = Vec::new();
+    while let Some(tok) = tokens.next() {
+        if &tok.to_string() == "," {
+            break;
+        } else {
+            writer.push(tok);
+        }
+    }
+    if writer.len() == 0 {
+        panic!("write_as! needs a Writer as its second argument followed by comma.")
+    }
+    let writer = proc_to_two(writer.into_iter().collect());
+
+    let statements = proc_to_two(template_to_statements(
+        "templates".as_ref(),
+        &format,
+        tokens.collect(),
+    ));
+
+    quote!(
+        {
+            use std::fmt::Write;
+            use display_as::DisplayAs;
+            let __f = &mut #writer;
+            let mut doit = || -> Result<(), std::fmt::Error> {
+                #statements
+                Ok(())
+            };
+            doit()
+        }
+    )
+    .into()
+}
+
 fn expr_toks_to_stmt(
     format: &proc_macro2::TokenStream,
     expr: &mut Vec<TokenTree>,
