@@ -160,7 +160,7 @@
 //! editors will hopefully be able to do the "right thing" for the
 //! template format (e.g. HTML in this case).
 
-#![cfg_attr(feature="docinclude", feature(external_doc))]
+#![cfg_attr(feature = "docinclude", feature(external_doc))]
 //! ## Using `include!("...")` within a template
 //!
 //! Now I will demonstrate how you can include template files within
@@ -171,17 +171,17 @@
 //! laid out.
 //! #### `base.html`:
 //! ```ignore
-#![cfg_attr(feature="docinclude", doc(include = "base.html"))]
+#![cfg_attr(feature = "docinclude", doc(include = "base.html"))]
 //! ```
 //! We can have a template for how we will display students...
 //! #### `student.html`:
 //! ```ignore
-#![cfg_attr(feature="docinclude", doc(include = "student.html"))]
+#![cfg_attr(feature = "docinclude", doc(include = "student.html"))]
 //!```
 //! Finally, an actual web page describing a class!
 //! #### `class.html`:
 //! ```ignore
-#![cfg_attr(feature="docinclude", doc(include = "class.html"))]
+#![cfg_attr(feature = "docinclude", doc(include = "class.html"))]
 //! ```
 //! Now to put all this together, we'll need some rust code.
 //!
@@ -216,18 +216,18 @@
 //!"#);
 //! ```
 
-extern crate mime;
 extern crate display_as_proc_macro;
+extern crate mime;
 extern crate proc_macro_hack;
 
-use proc_macro_hack::proc_macro_hack;
 #[proc_macro_hack]
-pub use display_as_proc_macro::{display_as_string};
+pub use display_as_proc_macro::display_as_string;
+use proc_macro_hack::proc_macro_hack;
 
 /// Can I write doc here?
-pub use display_as_proc_macro::{with_template};
+pub use display_as_proc_macro::with_template;
 
-use std::fmt::{Display, Formatter, Error};
+use std::fmt::{Display, Error, Formatter};
 
 #[macro_use]
 mod html;
@@ -237,10 +237,10 @@ mod rust;
 
 pub mod float;
 
-pub use crate::html::{HTML};
-pub use crate::latex::{LaTeX};
-pub use crate::mathlatex::{Math};
-pub use crate::rust::{Rust};
+pub use crate::html::HTML;
+pub use crate::latex::LaTeX;
+pub use crate::mathlatex::Math;
+pub use crate::rust::Rust;
 
 /// Format is a format that we can use for displaying data.
 pub trait Format {
@@ -263,7 +263,7 @@ pub trait DisplayAs<F: Format> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error>;
 }
 
-impl<F: Format, C: for <'a> Fn(F, &'a mut Formatter) -> Result<(), Error>> DisplayAs<F> for C {
+impl<F: Format, C: for<'a> Fn(F, &'a mut Formatter) -> Result<(), Error>> DisplayAs<F> for C {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         self(F::this_format(), f)
     }
@@ -279,9 +279,9 @@ fn test_closure() {
 }
 
 /// Choose to `Display` this type using `Format` `F`.
-pub struct As<F: Format, T: DisplayAs<F>>(pub F,pub T);
+pub struct As<F: Format, T: DisplayAs<F>>(pub F, pub T);
 
-impl<F: Format, T: DisplayAs<F>> Display for As<F,T> {
+impl<F: Format, T: DisplayAs<F>> Display for As<F, T> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         self.1.fmt(f)
     }
@@ -294,8 +294,8 @@ impl<F: Format, T: DisplayAs<F>> Display for As<F,T> {
 #[cfg(feature = "rouille")]
 pub mod rouille {
     extern crate rouille;
-    use super::{Format, As, DisplayAs};
-    impl<F: Format, T: DisplayAs<F>> Into<rouille::Response> for As<F,T> {
+    use super::{As, DisplayAs, Format};
+    impl<F: Format, T: DisplayAs<F>> Into<rouille::Response> for As<F, T> {
         fn into(self) -> rouille::Response {
             let s = format!("{}", &self);
             rouille::Response::from_data(F::mime().as_ref().to_string(), s)
@@ -308,16 +308,18 @@ pub mod rouille {
 #[cfg(feature = "actix-web")]
 pub mod actix {
     extern crate actix_web;
-    use self::actix_web::{Responder, HttpRequest, HttpResponse};
-    use super::{Format, As, DisplayAs};
-    impl<F: Format, T: DisplayAs<F>> Responder for As<F,T> {
+    use self::actix_web::{HttpRequest, HttpResponse, Responder};
+    use super::{As, DisplayAs, Format};
+    impl<F: Format, T: DisplayAs<F>> Responder for As<F, T> {
         type Item = HttpResponse;
         type Error = ::std::io::Error;
-        fn respond_to<S: 'static>(self, _req: &HttpRequest<S>)
-                                  -> Result<HttpResponse, Self::Error> {
+        fn respond_to<S: 'static>(
+            self,
+            _req: &HttpRequest<S>,
+        ) -> Result<HttpResponse, Self::Error> {
             Ok(HttpResponse::Ok()
-               .content_type(F::mime().as_ref().to_string())
-               .body(format!("{}", &self)))
+                .content_type(F::mime().as_ref().to_string())
+                .body(format!("{}", &self)))
         }
     }
 }
@@ -327,10 +329,10 @@ pub mod actix {
 #[cfg(feature = "gotham-web")]
 pub mod gotham {
     extern crate gotham;
-    extern crate hyper;
     extern crate http;
-    use super::{Format, As, DisplayAs};
-    impl<F: Format, T: DisplayAs<F>> gotham::handler::IntoResponse for As<F,T> {
+    extern crate hyper;
+    use super::{As, DisplayAs, Format};
+    impl<F: Format, T: DisplayAs<F>> gotham::handler::IntoResponse for As<F, T> {
         fn into_response(self, state: &gotham::state::State) -> http::Response<hyper::Body> {
             let s = format!("{}", &self);
             (http::StatusCode::OK, F::mime(), s).into_response(state)
@@ -361,13 +363,17 @@ impl<'a, F: Format> DisplayAs<F> for &'a str {
 
 #[cfg(test)]
 mod tests {
-    use super::{As,HTML};
+    use super::{As, HTML};
     #[test]
     fn html_escaping() {
-        assert_eq!(&format!("{}", As(HTML,"&")), "&amp;");
-        assert_eq!(&format!("{}", As(HTML,"hello &>this is cool")),
-                   "hello &amp;&gt;this is cool");
-        assert_eq!(&format!("{}", As(HTML,"hello &>this is 'cool")),
-                   "hello &amp;&gt;this is &#x27;cool");
+        assert_eq!(&format!("{}", As(HTML, "&")), "&amp;");
+        assert_eq!(
+            &format!("{}", As(HTML, "hello &>this is cool")),
+            "hello &amp;&gt;this is cool"
+        );
+        assert_eq!(
+            &format!("{}", As(HTML, "hello &>this is 'cool")),
+            "hello &amp;&gt;this is &#x27;cool"
+        );
     }
 }

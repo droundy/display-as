@@ -8,8 +8,12 @@ impl Format for Rust {
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {
         (&s as &std::fmt::Debug).fmt(f)
     }
-    fn mime() -> mime::Mime { return "text/x-rust".parse().unwrap(); }
-    fn this_format() -> Self { Rust }
+    fn mime() -> mime::Mime {
+        return "text/x-rust".parse().unwrap();
+    }
+    fn this_format() -> Self {
+        Rust
+    }
 }
 
 display_integers_as!(Rust);
@@ -17,7 +21,7 @@ display_floats_as!(Rust, "e", "", 1, None);
 
 #[test]
 fn escaping() {
-    assert_eq!(&format!("{}", As(Rust,"&")), r#""&""#);
+    assert_eq!(&format!("{}", As(Rust, "&")), r#""&""#);
 }
 #[test]
 fn floats() {

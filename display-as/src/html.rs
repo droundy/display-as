@@ -25,8 +25,12 @@ impl Format for HTML {
         f.write_str(s)
     }
     /// The MIME type for HTML is `mime::TEXT_HTML_UTF_8`.
-    fn mime() -> mime::Mime { return mime::TEXT_HTML_UTF_8; }
-    fn this_format() -> Self { HTML }
+    fn mime() -> mime::Mime {
+        return mime::TEXT_HTML_UTF_8;
+    }
+    fn this_format() -> Self {
+        HTML
+    }
 }
 
 macro_rules! display_as_from_display {
@@ -36,7 +40,7 @@ macro_rules! display_as_from_display {
                 (&self as &Display).fmt(f)
             }
         }
-    }
+    };
 }
 
 /// Conveniently implement DisplayAs for integers for a new `Format`.
@@ -55,7 +59,7 @@ macro_rules! display_integers_as {
         display_as_from_display!($format, u128);
         display_as_from_display!($format, isize);
         display_as_from_display!($format, usize);
-    }
+    };
 }
 
 display_integers_as!(HTML);
@@ -95,27 +99,29 @@ macro_rules! display_floats_as {
     ($format:ty, $e:expr, $after_e:expr, $e_cost:expr, $power_ten:expr) => {
         impl $crate::DisplayAs<$format> for f64 {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
-                $crate::float::Floating::from(*self)
-                    .fmt_with(f, $e, $after_e, $e_cost, $power_ten)
+                $crate::float::Floating::from(*self).fmt_with(f, $e, $after_e, $e_cost, $power_ten)
             }
         }
         impl $crate::DisplayAs<$format> for f32 {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
-                $crate::float::Floating::from(*self)
-                    .fmt_with(f, $e, $after_e, $e_cost, $power_ten)
+                $crate::float::Floating::from(*self).fmt_with(f, $e, $after_e, $e_cost, $power_ten)
             }
         }
-    }
+    };
 }
 display_floats_as!(HTML, "×10<sup>", "</sup>", 3, Some("10<sup>"));
 
 #[test]
 fn escaping() {
-    assert_eq!(&format!("{}", As(HTML,"&")), "&amp;");
-    assert_eq!(&format!("{}", As(HTML,"hello &>this is cool")),
-               "hello &amp;&gt;this is cool");
-    assert_eq!(&format!("{}", As(HTML,"hello &>this is 'cool")),
-               "hello &amp;&gt;this is &#x27;cool");
+    assert_eq!(&format!("{}", As(HTML, "&")), "&amp;");
+    assert_eq!(
+        &format!("{}", As(HTML, "hello &>this is cool")),
+        "hello &amp;&gt;this is cool"
+    );
+    assert_eq!(
+        &format!("{}", As(HTML, "hello &>this is 'cool")),
+        "hello &amp;&gt;this is &#x27;cool"
+    );
 }
 #[test]
 fn floats() {
