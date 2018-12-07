@@ -237,10 +237,10 @@ mod rust;
 
 pub mod float;
 
-pub use html::{HTML};
-pub use latex::{LaTeX};
-pub use mathlatex::{Math};
-pub use rust::{Rust};
+pub use crate::html::{HTML};
+pub use crate::latex::{LaTeX};
+pub use crate::mathlatex::{Math};
+pub use crate::rust::{Rust};
 
 /// Format is a format that we can use for displaying data.
 pub trait Format {

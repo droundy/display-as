@@ -5,6 +5,7 @@ authors = ["David Roundy <roundyd@physics.oregonstate.edu>"]
 description = "A helper crate for display-as-template."
 repository = "https://github.com/droundy/display-as"
 license = "Apache-2.0/MIT"
+edition = "2018"
 
 [lib]
 proc-macro = true

@@ -43,7 +43,6 @@ fn test_mixed_formats() {
 
 #[test]
 fn test_let() {
-    let foo = 3e6;
     assert_eq!(display_as_string!(HTML, let foo = {
         for i in 0..3 {
             "counting " i " "

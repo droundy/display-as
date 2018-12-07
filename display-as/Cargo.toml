@@ -6,6 +6,7 @@ description = "Compile-time templates for displaying data in different markup fo
 repository = "https://github.com/droundy/display-as"
 keywords = ["template", "latex", "html", "display"]
 license = "Apache-2.0/MIT"
+edition = "2018"
 
 [features]
 
