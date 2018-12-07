@@ -1,6 +1,6 @@
 extern crate display_as;
 
-use display_as::{with_template, As, DisplayAs, HTML};
+use display_as::{with_template, DisplayAs, HTML};
 
 struct Foo {
     name: String,
@@ -15,13 +15,11 @@ fn foo() {
     assert_eq!(
         &format!(
             "{}",
-            As(
-                HTML,
-                Foo {
-                    name: "David".to_string(),
-                    age: 45
-                }
-            )
+            Foo {
+                name: "David".to_string(),
+                age: 45
+            }
+            .display_as(HTML)
         ),
         "Foo: David with age 45"
     );
@@ -47,26 +45,22 @@ fn testing_if() {
     assert_eq!(
         &format!(
             "{}",
-            As(
-                HTML,
-                TestingIf {
-                    name: "David".to_string(),
-                    age: 45
-                }
-            )
+            TestingIf {
+                name: "David".to_string(),
+                age: 45
+            }
+            .display_as(HTML)
         ),
         "TestingIf: grown-up David who is 45 years old (THE END)"
     );
     assert_eq!(
         &format!(
             "{}",
-            As(
-                HTML,
-                TestingIf {
-                    name: "Miri".to_string(),
-                    age: 2
-                }
-            )
+            TestingIf {
+                name: "Miri".to_string(),
+                age: 2
+            }
+            .display_as(HTML)
         ),
         "TestingIf: minor Miri (THE END)"
     );
@@ -85,26 +79,22 @@ fn from_file() {
     assert_eq!(
         &format!(
             "{}",
-            As(
-                HTML,
-                FromFile {
-                    name: "David".to_string(),
-                    age: 45
-                }
-            )
+            FromFile {
+                name: "David".to_string(),
+                age: 45
+            }
+            .display_as(HTML)
         ),
         "FromFile: grown-up David who is 45 years old (THE END)\n"
     );
     assert_eq!(
         &format!(
             "{}",
-            As(
-                HTML,
-                FromFile {
-                    name: "Miri".to_string(),
-                    age: 2
-                }
-            )
+            FromFile {
+                name: "Miri".to_string(),
+                age: 2
+            }
+            .display_as(HTML)
         ),
         "FromFile: minor Miri (THE END)\n"
     );
@@ -123,26 +113,22 @@ fn from_file_include() {
     assert_eq!(
         &format!(
             "{}",
-            As(
-                HTML,
-                FromFileInclude {
-                    name: "David".to_string(),
-                    age: 45
-                }
-            )
+            FromFileInclude {
+                name: "David".to_string(),
+                age: 45
+            }
+            .display_as(HTML)
         ),
         "FromFile: grown-up David who is 45 years old (THE END)\n\n"
     );
     assert_eq!(
         &format!(
             "{}",
-            As(
-                HTML,
-                FromFileInclude {
-                    name: "Miri".to_string(),
-                    age: 2
-                }
-            )
+            FromFileInclude {
+                name: "Miri".to_string(),
+                age: 2
+            }
+            .display_as(HTML)
         ),
         "FromFile: minor Miri (THE END)\n\n"
     );
@@ -161,26 +147,22 @@ fn from_file_base() {
     assert_eq!(
         &format!(
             "{}",
-            As(
-                HTML,
-                FromFileBase {
-                    name: "David".to_string(),
-                    age: 45
-                }
-            )
+            FromFileBase {
+                name: "David".to_string(),
+                age: 45
+            }
+            .display_as(HTML)
         ),
         "FromFile: grown-up David who is 45 years old (THE END)\n\n"
     );
     assert_eq!(
         &format!(
             "{}",
-            As(
-                HTML,
-                FromFileBase {
-                    name: "Miri".to_string(),
-                    age: 2
-                }
-            )
+            FromFileBase {
+                name: "Miri".to_string(),
+                age: 2
+            }
+            .display_as(HTML)
         ),
         "FromFile: minor Miri (THE END)\n\n"
     );

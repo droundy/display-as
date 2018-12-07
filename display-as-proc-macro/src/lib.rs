@@ -95,6 +95,7 @@ pub fn display_as_string(input: TokenStream) -> TokenStream {
     quote!(
         {
             use std::fmt::Write;
+            use display_as::DisplayAs;
             let doit = || -> Result<String, std::fmt::Error> {
                 let mut __f = String::new();
                 #statements
@@ -116,14 +117,14 @@ fn expr_toks_to_stmt(
         expr.pop();
         let expr = proc_to_two(expr.drain(..).collect());
         two_to_proc(quote! {
-            __f.write_fmt(format_args!("{}", display_as::As(#format, #expr)))?;
+            __f.write_fmt(format_args!("{}", (#expr).display_as(#format)))?;
         })
         .into_iter()
     } else if expr.len() > 0 {
         let expr = proc_to_two(expr.drain(..).collect());
         let format = format.clone();
         two_to_proc(quote! {
-            __f.write_fmt(format_args!("{}", display_as::As(#format, #expr)))?;
+            __f.write_fmt(format_args!("{}", (#expr).display_as(#format)))?;
         })
         .into_iter()
     } else {
@@ -330,6 +331,6 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     );
     let new_impl = new_impl.into_iter().collect();
 
-    println!("new_impl is {}", &new_impl);
+    // println!("new_impl is {}", &new_impl);
     new_impl
 }

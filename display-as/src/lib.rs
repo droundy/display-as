@@ -1,19 +1,19 @@
 #![deny(missing_docs)]
-//! This template crate uses and defines a `DisplayAs` trait, which
+//! This template crate uses and defines a [DisplayAs] trait, which
 //! allows a type to be displayed in a particular format.
 //!
 //! # Overview
 //!
 //! This crate defines three things that you need be aware of in order
-//! to use it: the `Format` trait, which defines a markup language or
-//! other format, the `DisplayAs` trait which is implemented for any
-//! type that can be converted into some `Format`, and finally the
+//! to use it: the [Format] trait, which defines a markup language or
+//! other format, the [DisplayAs] trait which is implemented for any
+//! type that can be converted into some [Format], and finally the
 //! template language and macros which allow you to conveniently
-//! implement `DisplayAs` for your own types.  I will describe each of
+//! implement [DisplayAs] for your own types.  I will describe each of
 //! these concepts in order.  (**FIXME** I should also have a
 //! quick-start...)
 //!
-//! ## `Format`
+//! ## [Format]
 //!
 //! There are a number of predefined Formats (and I can easily add
 //! more if there are user requests), so the focus here will be on
@@ -26,25 +26,25 @@
 //!
 //! The `DisplayAs<F: Format>` trait is entirely analogous to the `Display` trait
 //! in the standard library, except that it is parametrized by a
-//! `Format` so you can have different representations for the same
+//! [Format] so you can have different representations for the same
 //! type in different formats.  This also makes it harder to
 //! accidentally include the wrong representation in your output.
 //!
-//! Most of the primitive types already have `DisplayAs` implemented
+//! Most of the primitive types already have [DisplayAs] implemented
 //! for the included Formats.  If you encounter a type that you wish
-//! had `DisplayAs` implemented for a given format, just let me know.
-//! You can manually implement `DisplayAs` for any of your own types
+//! had [DisplayAs] implemented for a given format, just let me know.
+//! You can manually implement [DisplayAs] for any of your own types
 //! (it's not worse than implementing `Display`) but that isn't how
 //! you are intended to do things (except perhaps in very simple
 //! cases, like a wrapper around an integer).  Instead you will want
-//! to use a template to implement `DisplayAs` for your own types.
+//! to use a template to implement [DisplayAs] for your own types.
 //!
 //! ## Templates!
 //!
 //! There are two template macros that you can use.  If you just want
-//! to get a string out of one or more `DisplayAs` objects, you will
+//! to get a string out of one or more [DisplayAs] objects, you will
 //! use something like `display_as_string!(HTML, "hello world" value)`.  If
-//! you want to implement `DisplayAs`, you will use the attribute
+//! you want to implement [DisplayAs], you will use the attribute
 //! `with_template`.  In these examples I will use
 //! `display_as_string!` because that makes it easy to write testable
 //! documentation.  But in practice you will most likely primarily use
@@ -252,7 +252,7 @@ pub trait Format {
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error>;
     /// The mime type of this format.
     fn mime() -> mime::Mime;
-    /// Return an actual `Format` for use in `As` below.
+    /// Return an actual [Format] for use in `As` below.
     fn this_format() -> Self;
 }
 
@@ -261,6 +261,11 @@ pub trait Format {
 pub trait DisplayAs<F: Format> {
     /// Formats the value using the given formatter.
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error>;
+
+    /// Creates a display object
+    fn display_as<'a>(&'a self, _format: F) -> As<'a, F, Self> {
+        As::from(self)
+    }
 }
 
 impl<F: Format, C: for<'a> Fn(F, &'a mut Formatter) -> Result<(), Error>> DisplayAs<F> for C {
@@ -275,15 +280,25 @@ fn test_closure() {
         __f.write_str("hello world")?;
         Ok(())
     };
-    assert_eq!("hello world", &format!("{}", As(HTML, x)));
+    assert_eq!("hello world", &format!("{}", x.display_as(HTML)));
 }
 
-/// Choose to `Display` this type using `Format` `F`.
-pub struct As<F: Format, T: DisplayAs<F>>(pub F, pub T);
-
-impl<F: Format, T: DisplayAs<F>> Display for As<F, T> {
+/// Choose to `Display` this type using a particular [Format] `F`.
+pub struct As<'a, F: Format, T: DisplayAs<F> + ?Sized> {
+    inner: &'a T,
+    phantom: std::marker::PhantomData<F>,
+}
+impl<'a, F: Format, T: DisplayAs<F> + ?Sized> From<&'a T> for As<'a, F, T> {
+    fn from(value: &'a T) -> Self {
+        As {
+            phantom: std::marker::PhantomData,
+            inner: value,
+        }
+    }
+}
+impl<'a, F: Format, T: DisplayAs<F> + ?Sized> Display for As<'a, F, T> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        self.1.fmt(f)
+        self.inner.fmt(f)
     }
 }
 
@@ -294,7 +309,7 @@ impl<F: Format, T: DisplayAs<F>> Display for As<F, T> {
 #[cfg(feature = "rouille")]
 pub mod rouille {
     extern crate rouille;
-    use super::{As, DisplayAs, Format};
+    use super::{DisplayAs, Format, As};
     impl<F: Format, T: DisplayAs<F>> Into<rouille::Response> for As<F, T> {
         fn into(self) -> rouille::Response {
             let s = format!("{}", &self);
@@ -309,7 +324,7 @@ pub mod rouille {
 pub mod actix {
     extern crate actix_web;
     use self::actix_web::{HttpRequest, HttpResponse, Responder};
-    use super::{As, DisplayAs, Format};
+    use super::{DisplayAs, Format, As};
     impl<F: Format, T: DisplayAs<F>> Responder for As<F, T> {
         type Item = HttpResponse;
         type Error = ::std::io::Error;
@@ -331,7 +346,7 @@ pub mod gotham {
     extern crate gotham;
     extern crate http;
     extern crate hyper;
-    use super::{As, DisplayAs, Format};
+    use super::{DisplayAs, Format, As};
     impl<F: Format, T: DisplayAs<F>> gotham::handler::IntoResponse for As<F, T> {
         fn into_response(self, state: &gotham::state::State) -> http::Response<hyper::Body> {
             let s = format!("{}", &self);
@@ -363,16 +378,16 @@ impl<'a, F: Format> DisplayAs<F> for &'a str {
 
 #[cfg(test)]
 mod tests {
-    use super::{As, HTML};
+    use super::{DisplayAs, HTML};
     #[test]
     fn html_escaping() {
-        assert_eq!(&format!("{}", As(HTML, "&")), "&amp;");
+        assert_eq!(&format!("{}", "&".display_as(HTML)), "&amp;");
         assert_eq!(
-            &format!("{}", As(HTML, "hello &>this is cool")),
+            &format!("{}", "hello &>this is cool".display_as(HTML)),
             "hello &amp;&gt;this is cool"
         );
         assert_eq!(
-            &format!("{}", As(HTML, "hello &>this is 'cool")),
+            &format!("{}", "hello &>this is 'cool".display_as(HTML)),
             "hello &amp;&gt;this is &#x27;cool"
         );
     }

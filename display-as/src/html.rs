@@ -113,20 +113,20 @@ display_floats_as!(HTML, "×10<sup>", "</sup>", 3, Some("10<sup>"));
 
 #[test]
 fn escaping() {
-    assert_eq!(&format!("{}", As(HTML, "&")), "&amp;");
+    assert_eq!(&format!("{}", "&".display_as(HTML)), "&amp;");
     assert_eq!(
-        &format!("{}", As(HTML, "hello &>this is cool")),
+        &format!("{}", "hello &>this is cool".display_as(HTML)),
         "hello &amp;&gt;this is cool"
     );
     assert_eq!(
-        &format!("{}", As(HTML, "hello &>this is 'cool")),
+        &format!("{}", "hello &>this is 'cool".display_as(HTML)),
         "hello &amp;&gt;this is &#x27;cool"
     );
 }
 #[test]
 fn floats() {
-    assert_eq!(&format!("{}", As(HTML, 3.0)), "3");
-    assert_eq!(&format!("{}", As(HTML, 3e5)), "3×10<sup>5</sup>");
-    assert_eq!(&format!("{}", As(HTML, 1e-6)), "10<sup>-6</sup>");
-    assert_eq!(&format!("{}", As(HTML, 3e4)), "30000");
+    assert_eq!(&format!("{}", 3.0.display_as(HTML)), "3");
+    assert_eq!(&format!("{}", 3e5.display_as(HTML)), "3×10<sup>5</sup>");
+    assert_eq!(&format!("{}", 1e-6.display_as(HTML)), "10<sup>-6</sup>");
+    assert_eq!(&format!("{}", 3e4.display_as(HTML)), "30000");
 }
