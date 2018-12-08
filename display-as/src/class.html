@@ -2,14 +2,12 @@
 
 let title = { "PH" self.coursenumber ": " self.coursename };
 let body = {
-  r#"<ul>
-
-  // This is buggy:  I want to iterate, but it fails!
+  r#"<ul>"#
   for s in self.students.iter() {
     "<li>" s "</li>"
   }
 
-  </ul>"#
+  r#"</ul>"#
 };
 include!("base.html");
 
