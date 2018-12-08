@@ -5,8 +5,12 @@ use super::*;
 /// Format as LaTeX math mode.
 pub struct Math;
 impl Format for Math {
-    fn mime() -> mime::Mime { return "text/x-latex".parse().unwrap(); }
-    fn this_format() -> Self { Math }
+    fn mime() -> mime::Mime {
+        return "text/x-latex".parse().unwrap();
+    }
+    fn this_format() -> Self {
+        Math
+    }
     fn escape(f: &mut Formatter, mut s: &str) -> Result<(), Error> {
         let badstuff = "&{}#%\\~$_^";
         while let Some(idx) = s.find(|c| badstuff.contains(c)) {
@@ -19,7 +23,7 @@ impl Format for Math {
                 "}" => r"\}",
                 "#" => r"\#",
                 "%" => r"\%",
-                "\\"=> r"\textbackslash{}",
+                "\\" => r"\textbackslash{}",
                 "~" => r"\textasciitilde{}",
                 "$" => r"\$",
                 "_" => r"\_",
@@ -37,16 +41,20 @@ display_floats_as!(Math, r"\times10^{", "}", 3, Some("10^{"));
 
 #[test]
 fn escaping() {
-    assert_eq!(&format!("{}", As(Math,"&")), r"\&");
-    assert_eq!(&format!("{}", As(Math,"hello &>this is cool")),
-               r"hello \&>this is cool");
-    assert_eq!(&format!("{}", As(Math,"hello &>this is 'cool")),
-               r"hello \&>this is 'cool");
+    assert_eq!(&format!("{}", "&".display_as(Math)), r"\&");
+    assert_eq!(
+        &format!("{}", "hello &>this is cool".display_as(Math)),
+        r"hello \&>this is cool"
+    );
+    assert_eq!(
+        &format!("{}", "hello &>this is 'cool".display_as(Math)),
+        r"hello \&>this is 'cool"
+    );
 }
 #[test]
 fn floats() {
-    assert_eq!(&format!("{}", As(Math, 3.0)), "3");
-    assert_eq!(&format!("{}", As(Math, 3e5)), r"3\times10^{5}");
-    assert_eq!(&format!("{}", As(Math, 1e5)), r"10^{5}");
-    assert_eq!(&format!("{}", As(Math, 3e4)), "30000");
+    assert_eq!(&format!("{}", 3.0.display_as(Math)), "3");
+    assert_eq!(&format!("{}", 3e5.display_as(Math)), r"3\times10^{5}");
+    assert_eq!(&format!("{}", 1e5.display_as(Math)), r"10^{5}");
+    assert_eq!(&format!("{}", 3e4.display_as(Math)), "30000");
 }

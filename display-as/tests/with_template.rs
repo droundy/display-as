@@ -1,6 +1,6 @@
 extern crate display_as;
 
-use display_as::{with_template, DisplayAs, As, HTML};
+use display_as::{with_template, DisplayAs, HTML};
 
 struct Foo {
     name: String,
@@ -12,9 +12,17 @@ impl DisplayAs<HTML> for Foo {}
 
 #[test]
 fn foo() {
-    assert_eq!(&format!("{}", As(HTML, Foo { name: "David".to_string(),
-                                             age: 45 })),
-               "Foo: David with age 45");
+    assert_eq!(
+        &format!(
+            "{}",
+            Foo {
+                name: "David".to_string(),
+                age: 45
+            }
+            .display_as(HTML)
+        ),
+        "Foo: David with age 45"
+    );
 }
 
 struct TestingIf {
@@ -34,14 +42,29 @@ impl DisplayAs<HTML> for TestingIf {}
 
 #[test]
 fn testing_if() {
-    assert_eq!(&format!("{}", As(HTML, TestingIf { name: "David".to_string(),
-                                                   age: 45 })),
-               "TestingIf: grown-up David who is 45 years old (THE END)");
-    assert_eq!(&format!("{}", As(HTML, TestingIf { name: "Miri".to_string(),
-                                                   age: 2 })),
-               "TestingIf: minor Miri (THE END)");
+    assert_eq!(
+        &format!(
+            "{}",
+            TestingIf {
+                name: "David".to_string(),
+                age: 45
+            }
+            .display_as(HTML)
+        ),
+        "TestingIf: grown-up David who is 45 years old (THE END)"
+    );
+    assert_eq!(
+        &format!(
+            "{}",
+            TestingIf {
+                name: "Miri".to_string(),
+                age: 2
+            }
+            .display_as(HTML)
+        ),
+        "TestingIf: minor Miri (THE END)"
+    );
 }
-
 
 struct FromFile {
     name: String,
@@ -53,12 +76,28 @@ impl DisplayAs<HTML> for FromFile {}
 
 #[test]
 fn from_file() {
-    assert_eq!(&format!("{}", As(HTML, FromFile { name: "David".to_string(),
-                                                   age: 45 })),
-               "FromFile: grown-up David who is 45 years old (THE END)\n");
-    assert_eq!(&format!("{}", As(HTML, FromFile { name: "Miri".to_string(),
-                                                   age: 2 })),
-               "FromFile: minor Miri (THE END)\n");
+    assert_eq!(
+        &format!(
+            "{}",
+            FromFile {
+                name: "David".to_string(),
+                age: 45
+            }
+            .display_as(HTML)
+        ),
+        "FromFile: grown-up David who is 45 years old (THE END)\n"
+    );
+    assert_eq!(
+        &format!(
+            "{}",
+            FromFile {
+                name: "Miri".to_string(),
+                age: 2
+            }
+            .display_as(HTML)
+        ),
+        "FromFile: minor Miri (THE END)\n"
+    );
 }
 
 struct FromFileInclude {
@@ -71,14 +110,29 @@ impl DisplayAs<HTML> for FromFileInclude {}
 
 #[test]
 fn from_file_include() {
-    assert_eq!(&format!("{}", As(HTML, FromFileInclude { name: "David".to_string(),
-                                                         age: 45 })),
-               "FromFile: grown-up David who is 45 years old (THE END)\n\n");
-    assert_eq!(&format!("{}", As(HTML, FromFileInclude { name: "Miri".to_string(),
-                                                         age: 2 })),
-               "FromFile: minor Miri (THE END)\n\n");
+    assert_eq!(
+        &format!(
+            "{}",
+            FromFileInclude {
+                name: "David".to_string(),
+                age: 45
+            }
+            .display_as(HTML)
+        ),
+        "FromFile: grown-up David who is 45 years old (THE END)\n\n"
+    );
+    assert_eq!(
+        &format!(
+            "{}",
+            FromFileInclude {
+                name: "Miri".to_string(),
+                age: 2
+            }
+            .display_as(HTML)
+        ),
+        "FromFile: minor Miri (THE END)\n\n"
+    );
 }
-
 
 struct FromFileBase {
     name: String,
@@ -90,10 +144,26 @@ impl DisplayAs<HTML> for FromFileBase {}
 
 #[test]
 fn from_file_base() {
-    assert_eq!(&format!("{}", As(HTML, FromFileBase { name: "David".to_string(),
-                                                         age: 45 })),
-               "FromFile: grown-up David who is 45 years old (THE END)\n\n");
-    assert_eq!(&format!("{}", As(HTML, FromFileBase { name: "Miri".to_string(),
-                                                         age: 2 })),
-               "FromFile: minor Miri (THE END)\n\n");
+    assert_eq!(
+        &format!(
+            "{}",
+            FromFileBase {
+                name: "David".to_string(),
+                age: 45
+            }
+            .display_as(HTML)
+        ),
+        "FromFile: grown-up David who is 45 years old (THE END)\n\n"
+    );
+    assert_eq!(
+        &format!(
+            "{}",
+            FromFileBase {
+                name: "Miri".to_string(),
+                age: 2
+            }
+            .display_as(HTML)
+        ),
+        "FromFile: minor Miri (THE END)\n\n"
+    );
 }

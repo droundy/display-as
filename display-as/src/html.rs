@@ -1,8 +1,8 @@
-//! Format as HTML
+//! [Format] as HTML
 
 use super::*;
 
-/// Format as HTML.
+/// [Format] as HTML.
 pub struct HTML;
 impl Format for HTML {
     fn escape(f: &mut Formatter, mut s: &str) -> Result<(), Error> {
@@ -24,9 +24,13 @@ impl Format for HTML {
         }
         f.write_str(s)
     }
-    /// The MIME type for HTML is `mime::TEXT_HTML_UTF_8`.
-    fn mime() -> mime::Mime { return mime::TEXT_HTML_UTF_8; }
-    fn this_format() -> Self { HTML }
+    /// The MIME type for HTML is [mime::TEXT_HTML_UTF_8].
+    fn mime() -> mime::Mime {
+        return mime::TEXT_HTML_UTF_8;
+    }
+    fn this_format() -> Self {
+        HTML
+    }
 }
 
 macro_rules! display_as_from_display {
@@ -36,10 +40,10 @@ macro_rules! display_as_from_display {
                 (&self as &Display).fmt(f)
             }
         }
-    }
+    };
 }
 
-/// Conveniently implement DisplayAs for integers for a new `Format`.
+/// Conveniently implement [DisplayAs] for integers for a new [Format].
 #[macro_export]
 macro_rules! display_integers_as {
     ($format:ty) => {
@@ -55,17 +59,17 @@ macro_rules! display_integers_as {
         display_as_from_display!($format, u128);
         display_as_from_display!($format, isize);
         display_as_from_display!($format, usize);
-    }
+    };
 }
 
 display_integers_as!(HTML);
 
-/// Inconveniently implement DisplayAs for floats for a new `Format`.
+/// Inconveniently implement [DisplayAs] for floats for a new [Format].
 ///
 /// This is inconvenient because we want to enable pretty formatting
 /// of both large and small numbers in whatever markup language we are
 /// using.  The first argument of the macro is the format that wants
-/// implementation of `DisplayAs` for floats.
+/// implementation of [DisplayAs] for floats.
 ///
 /// For partial documentation of the other files, see
 /// [Floating::fmt_with](float/enum.Floating.html#method.fmt_with).
@@ -73,7 +77,7 @@ display_integers_as!(HTML);
 /// the other arguments.
 /// ```
 /// struct HTML;
-/// use display_as::{Format, display_as_string};
+/// use display_as::{Format, format_as};
 /// impl Format for HTML {
 ///    fn escape(f: &mut ::std::fmt::Formatter, mut s: &str) -> Result<(), ::std::fmt::Error> {
 ///        f.write_str(s) // for example I skip escaping...
@@ -83,11 +87,11 @@ display_integers_as!(HTML);
 /// }
 /// display_as::display_floats_as!(HTML, "×10<sup>", "</sup>", 3, Some("10<sup>"));
 /// fn main() {
-///   assert_eq!(&display_as_string!(HTML, 1e3), "1000");
-///   assert_eq!(&display_as_string!(HTML, 3e4), "30000");
-///   assert_eq!(&display_as_string!(HTML, 1e5), "10<sup>5</sup>");
-///   assert_eq!(&display_as_string!(HTML, 2e5), "2×10<sup>5</sup>");
-///   assert_eq!(&display_as_string!(HTML, 1e6), "10<sup>6</sup>");
+///   assert_eq!(&format_as!(HTML, 1e3), "1000");
+///   assert_eq!(&format_as!(HTML, 3e4), "30000");
+///   assert_eq!(&format_as!(HTML, 1e5), "10<sup>5</sup>");
+///   assert_eq!(&format_as!(HTML, 2e5), "2×10<sup>5</sup>");
+///   assert_eq!(&format_as!(HTML, 1e6), "10<sup>6</sup>");
 /// }
 /// ```
 #[macro_export]
@@ -95,32 +99,34 @@ macro_rules! display_floats_as {
     ($format:ty, $e:expr, $after_e:expr, $e_cost:expr, $power_ten:expr) => {
         impl $crate::DisplayAs<$format> for f64 {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
-                $crate::float::Floating::from(*self)
-                    .fmt_with(f, $e, $after_e, $e_cost, $power_ten)
+                $crate::float::Floating::from(*self).fmt_with(f, $e, $after_e, $e_cost, $power_ten)
             }
         }
         impl $crate::DisplayAs<$format> for f32 {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
-                $crate::float::Floating::from(*self)
-                    .fmt_with(f, $e, $after_e, $e_cost, $power_ten)
+                $crate::float::Floating::from(*self).fmt_with(f, $e, $after_e, $e_cost, $power_ten)
             }
         }
-    }
+    };
 }
 display_floats_as!(HTML, "×10<sup>", "</sup>", 3, Some("10<sup>"));
 
 #[test]
 fn escaping() {
-    assert_eq!(&format!("{}", As(HTML,"&")), "&amp;");
-    assert_eq!(&format!("{}", As(HTML,"hello &>this is cool")),
-               "hello &amp;&gt;this is cool");
-    assert_eq!(&format!("{}", As(HTML,"hello &>this is 'cool")),
-               "hello &amp;&gt;this is &#x27;cool");
+    assert_eq!(&format!("{}", "&".display_as(HTML)), "&amp;");
+    assert_eq!(
+        &format!("{}", "hello &>this is cool".display_as(HTML)),
+        "hello &amp;&gt;this is cool"
+    );
+    assert_eq!(
+        &format!("{}", "hello &>this is 'cool".display_as(HTML)),
+        "hello &amp;&gt;this is &#x27;cool"
+    );
 }
 #[test]
 fn floats() {
-    assert_eq!(&format!("{}", As(HTML, 3.0)), "3");
-    assert_eq!(&format!("{}", As(HTML, 3e5)), "3×10<sup>5</sup>");
-    assert_eq!(&format!("{}", As(HTML, 1e-6)), "10<sup>-6</sup>");
-    assert_eq!(&format!("{}", As(HTML, 3e4)), "30000");
+    assert_eq!(&format!("{}", 3.0.display_as(HTML)), "3");
+    assert_eq!(&format!("{}", 3e5.display_as(HTML)), "3×10<sup>5</sup>");
+    assert_eq!(&format!("{}", 1e-6.display_as(HTML)), "10<sup>-6</sup>");
+    assert_eq!(&format!("{}", 3e4.display_as(HTML)), "30000");
 }

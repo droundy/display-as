@@ -1,11 +1,11 @@
-//! Internal helper code required for `display_floats_as`.
+//! Internal helper code required for [display_floats_as].
 //!
 //! The standard library does nice exact conversions to decimal, but
 //! lacks a nice output format, so this module helps to do that.  **Do
-//! not use this code direcly, but instead call `display_floats_as`!**
+//! not use this code direcly, but instead call [display_floats_as]!**
 
+use std::fmt::{Display, Error, Formatter};
 use std::str::FromStr;
-use std::fmt::{Display, Formatter, Error};
 
 /// This represents an f32 or f64 that has been converted to a string,
 /// but which we have not yet decided for certain how to represent
@@ -40,10 +40,13 @@ impl From<f64> for Floating {
             if mantissa.len() > 1 {
                 mantissa.remove(1);
             }
-            let exponent = i16::from_str(parts.next()
-                                         .expect("float repr should have exponent")
-            ).expect("exponent should be integer");
-            Floating::Normal { exponent, mantissa, is_negative }
+            let exponent = i16::from_str(parts.next().expect("float repr should have exponent"))
+                .expect("exponent should be integer");
+            Floating::Normal {
+                exponent,
+                mantissa,
+                is_negative,
+            }
         } else {
             panic!("I think thi sis impossible...");
         }
@@ -63,10 +66,13 @@ impl From<f32> for Floating {
             if mantissa.len() > 1 {
                 mantissa.remove(1);
             }
-            let exponent = i16::from_str(parts.next()
-                                         .expect("float repr should have exponent")
-            ).expect("exponent should be integer");
-            Floating::Normal { exponent, mantissa, is_negative }
+            let exponent = i16::from_str(parts.next().expect("float repr should have exponent"))
+                .expect("exponent should be integer");
+            Floating::Normal {
+                exponent,
+                mantissa,
+                is_negative,
+            }
         } else {
             panic!("I think thi sis impossible...");
         }
@@ -75,18 +81,22 @@ impl From<f32> for Floating {
 
 #[test]
 fn to_floating() {
-    assert_eq!(Floating::from(1.0),
-               Floating::Normal {
-                   exponent: 0,
-                   mantissa: "1".to_string(),
-                   is_negative: false
-               });
-    assert_eq!(Floating::from(1.2e10),
-               Floating::Normal {
-                   exponent: 10,
-                   mantissa: "12".to_string(),
-                   is_negative: false
-               });
+    assert_eq!(
+        Floating::from(1.0),
+        Floating::Normal {
+            exponent: 0,
+            mantissa: "1".to_string(),
+            is_negative: false
+        }
+    );
+    assert_eq!(
+        Floating::from(1.2e10),
+        Floating::Normal {
+            exponent: 10,
+            mantissa: "12".to_string(),
+            is_negative: false
+        }
+    );
 }
 
 impl Floating {
@@ -95,17 +105,28 @@ impl Floating {
     /// it using scientific notation.  `e_waste` is the number
     /// of characters we consider wasted when using scientific
     /// notation.
-    pub fn fmt_with(&self, f: &mut Formatter,
-                    e: &str, after_e: &str, e_waste: usize,
-                    power_ten: Option<&str>) -> Result<(), Error> {
+    pub fn fmt_with(
+        &self,
+        f: &mut Formatter,
+        e: &str,
+        after_e: &str,
+        e_waste: usize,
+        power_ten: Option<&str>,
+    ) -> Result<(), Error> {
         match self {
             Floating::Abnormal(s) => f.write_str(&s),
-            Floating::Normal { exponent, mantissa, is_negative } => {
+            Floating::Normal {
+                exponent,
+                mantissa,
+                is_negative,
+            } => {
                 let e_waste = e_waste as i16;
-                if *is_negative { f.write_str("-")?; }
+                if *is_negative {
+                    f.write_str("-")?;
+                }
                 if *exponent > 1 + e_waste || *exponent < -2 - e_waste {
                     if mantissa.len() > 1 {
-                        let (a,r) = mantissa.split_at(1);
+                        let (a, r) = mantissa.split_at(1);
                         f.write_str(a)?;
                         f.write_str(".")?;
                         f.write_str(r)?;
@@ -125,22 +146,22 @@ impl Floating {
                         f.write_str(after_e)
                     }
                 } else {
-                    if *exponent+1 > mantissa.len() as i16 {
+                    if *exponent + 1 > mantissa.len() as i16 {
                         f.write_str(mantissa)?;
-                        for _ in 0 .. *exponent as usize + 1 - mantissa.len() {
+                        for _ in 0..*exponent as usize + 1 - mantissa.len() {
                             f.write_str("0")?;
                         }
                         Ok(())
                     } else if *exponent < 0 {
                         f.write_str("0.")?;
-                        for _ in 0 .. -exponent-1 {
+                        for _ in 0..-exponent - 1 {
                             f.write_str("0")?;
                         }
                         f.write_str(&mantissa)
-                    } else if *exponent+1 == mantissa.len() as i16 {
+                    } else if *exponent + 1 == mantissa.len() as i16 {
                         f.write_str(mantissa)
                     } else {
-                        let (a,b) = mantissa.split_at(*exponent as usize+1);
+                        let (a, b) = mantissa.split_at(*exponent as usize + 1);
                         f.write_str(a)?;
                         f.write_str(".")?;
                         f.write_str(b)
