@@ -1,6 +1,6 @@
 extern crate display_as;
 
-use display_as::{format_as, Rust, HTML};
+use display_as::{format_as, with_template, DisplayAs, Rust, HTML};
 
 #[test]
 fn just_string() {
@@ -31,7 +31,10 @@ fn string_and_integer() {
 }
 #[test]
 fn integer_reference() {
-    assert_eq!(display_as_string!(HTML, r"Number " &3u64 r" is odd"), r"Number 3 is odd");
+    assert_eq!(
+        format_as!(HTML, r"Number " &3u64 r" is odd"),
+        r"Number 3 is odd"
+    );
 }
 #[test]
 fn string_and_float() {
@@ -93,7 +96,8 @@ fn test_let_again() {
     #[with_template("Foo " self.0)]
     impl DisplayAs<HTML> for Foo {}
     let foos = vec![Foo(1), Foo(2)];
-    assert_eq!(format_as!(HTML,
+    assert_eq!(
+        format_as!(HTML,
                           let foo = {
                               "I am "
                                   for i in foos.iter() {
@@ -101,5 +105,6 @@ fn test_let_again() {
                                   }
                           };
                           foo "and I am done!"),
-               r"I am counting 0 counting 1 counting 2 and I am done!");
+        r"I am counting Foo 1 counting Foo 2 and I am done!"
+    );
 }

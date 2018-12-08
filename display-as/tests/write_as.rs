@@ -29,7 +29,8 @@ fn write_nice_loop() {
     let mut s = String::new();
     write_as!(HTML, s, for d in data.iter() {
         " " d
-    }).unwrap();
+    })
+    .unwrap();
     assert_eq!(&s, r" hello world");
 }
 
@@ -39,6 +40,7 @@ fn write_nice_loop_strings() {
     let mut s = String::new();
     write_as!(HTML, s, for d in data.into_iter() {
         " " d
-    }).unwrap();
+    })
+    .unwrap();
     assert_eq!(&s, r" hello world");
 }

@@ -220,11 +220,11 @@ extern crate display_as_proc_macro;
 extern crate mime;
 extern crate proc_macro_hack;
 
-use proc_macro_hack::proc_macro_hack;
 #[proc_macro_hack]
 pub use display_as_proc_macro::format_as;
 #[proc_macro_hack]
 pub use display_as_proc_macro::write_as;
+use proc_macro_hack::proc_macro_hack;
 
 /// Can I write doc here?
 pub use display_as_proc_macro::with_template;
