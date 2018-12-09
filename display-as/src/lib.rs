@@ -358,8 +358,9 @@ pub mod gotham {
 #[cfg(feature = "warp")]
 pub mod warp {
     use crate::{As, DisplayAs, Format};
-    impl<'a, F: Format, T: 'a + DisplayAs<F>> Into<http::Response<String>> for As<'a, F, T> {
-        fn into(self) -> http::Response<String> {
+    impl<'a, F: Format, T: 'a + DisplayAs<F>> As<'a, F, T> {
+        /// Convert into a [warp::Reply].
+        pub fn into_reply(self) -> http::Response<String> {
             let s = format!("{}", &self);
             let m = F::mime().as_ref().to_string();
             let mut response = http::Response::builder();
