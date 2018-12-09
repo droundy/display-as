@@ -390,3 +390,11 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     // println!("new_impl is {}", &new_impl);
     new_impl
 }
+
+/// Like [with_template], but also generate any web responder
+/// implementations that are handled via feature flags.
+#[proc_macro_attribute]
+pub fn with_response_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
+    let displayas_impl = with_template(input, my_impl.clone());
+    displayas_impl
+}
