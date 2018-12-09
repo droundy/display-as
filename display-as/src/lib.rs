@@ -312,7 +312,7 @@ impl<'a, F: Format, T: DisplayAs<F> + ?Sized> Display for As<'a, F, T> {
 pub mod rouille {
     extern crate rouille;
     use super::{As, DisplayAs, Format};
-    impl<F: Format, T: DisplayAs<F>> Into<rouille::Response> for As<F, T> {
+    impl<'a, F: Format, T: DisplayAs<F>> Into<rouille::Response> for As<'a, F, T> {
         fn into(self) -> rouille::Response {
             let s = format!("{}", &self);
             rouille::Response::from_data(F::mime().as_ref().to_string(), s)
@@ -327,7 +327,7 @@ pub mod actix {
     extern crate actix_web;
     use self::actix_web::{HttpRequest, HttpResponse, Responder};
     use super::{As, DisplayAs, Format};
-    impl<F: Format, T: DisplayAs<F>> Responder for As<F, T> {
+    impl<'a, F: Format, T: 'a + DisplayAs<F>> Responder for As<'a, F, T> {
         type Item = HttpResponse;
         type Error = ::std::io::Error;
         fn respond_to<S: 'static>(
@@ -345,14 +345,28 @@ pub mod actix {
 /// [gotham::IntoResponse].
 #[cfg(feature = "gotham-web")]
 pub mod gotham {
-    extern crate gotham;
-    extern crate http;
-    extern crate hyper;
-    use super::{As, DisplayAs, Format};
-    impl<F: Format, T: DisplayAs<F>> gotham::handler::IntoResponse for As<F, T> {
+    use crate::{As, DisplayAs, Format};
+    impl<'a, F: Format, T: 'a + DisplayAs<F>> gotham::handler::IntoResponse for As<'a, F, T> {
         fn into_response(self, state: &gotham::state::State) -> http::Response<hyper::Body> {
             let s = format!("{}", &self);
             (http::StatusCode::OK, F::mime(), s).into_response(state)
+        }
+    }
+}
+
+/// The `warp` feature flag makes any [As] type Into<[http::Response]>.
+#[cfg(feature = "warp")]
+pub mod warp {
+    use crate::{As, DisplayAs, Format};
+    impl<'a, F: Format, T: 'a + DisplayAs<F>> Into<http::Response<String>> for As<'a, F, T> {
+        fn into(self) -> http::Response<String> {
+            let s = format!("{}", &self);
+            let m = F::mime().as_ref().to_string();
+            let mut response = http::Response::builder();
+            response
+                .header("Content-type", m.as_bytes())
+                .status(http::StatusCode::OK);
+            response.body(s).unwrap()
         }
     }
 }

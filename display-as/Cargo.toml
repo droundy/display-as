@@ -12,6 +12,7 @@ edition = "2018"
 
 gotham-web = ["gotham", "hyper", "http"]
 docinclude = []
+warp = ["http"]
 
 [package.metadata.docs.rs]
 all-features = true
