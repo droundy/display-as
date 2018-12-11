@@ -1,6 +1,6 @@
 extern crate display_as;
 
-use display_as::{with_template, DisplayAs, HTML};
+use display_as::{with_template, DisplayAs, HTML, URL};
 
 struct Foo {
     name: String,
@@ -141,6 +141,8 @@ struct FromFileBase {
 
 #[with_template("from-file-base.html")]
 impl DisplayAs<HTML> for FromFileBase {}
+#[with_template("url/" self.name)]
+impl DisplayAs<URL> for FromFileBase {}
 
 #[test]
 fn from_file_base() {
@@ -153,7 +155,7 @@ fn from_file_base() {
             }
             .display_as(HTML)
         ),
-        "FromFile: grown-up David who is 45 years old (THE END)\n\n"
+        "FromFile: grown-up url/David who is 45 years old (THE END)\n\n"
     );
     assert_eq!(
         &format!(
@@ -164,6 +166,6 @@ fn from_file_base() {
             }
             .display_as(HTML)
         ),
-        "FromFile: minor Miri (THE END)\n\n"
+        "FromFile: minor url/Miri (THE END)\n\n"
     );
 }
