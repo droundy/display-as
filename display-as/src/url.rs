@@ -1,4 +1,4 @@
-//! [Format] as URL
+//! [Format] as URL, with escaping using percent encoding.
 
 use super::*;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
