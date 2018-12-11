@@ -236,10 +236,12 @@ mod html;
 mod latex;
 mod mathlatex;
 mod rust;
+mod url;
 
 pub mod float;
 
 pub use crate::html::HTML;
+pub use crate::url::URL;
 pub use crate::latex::LaTeX;
 pub use crate::mathlatex::Math;
 pub use crate::rust::Rust;

@@ -1,6 +1,6 @@
 [package]
 name = "display-as"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["David Roundy <roundyd@physics.oregonstate.edu>"]
 description = "Compile-time templates for displaying data in different markup formats."
 repository = "https://github.com/droundy/display-as"
@@ -23,6 +23,7 @@ display-as-proc-macro = { version = "0.3.0", path = "../display-as-proc-macro" }
 proc-macro-hack = "0.5"
 
 mime = "0.3.12"
+percent-encoding = "1.0.1"
 
 rouille = { version = "2.2.0", optional = true }
 actix-web = { version = "0.7.14", optional = true }
