@@ -169,3 +169,37 @@ fn from_file_base() {
         "FromFile: minor url/Miri (THE END)\n\n"
     );
 }
+
+
+struct Delimiters {
+    name: String,
+    age: usize,
+}
+#[with_template("}}" "{{" "delimiters.html")]
+impl DisplayAs<HTML> for Delimiters {}
+
+#[test]
+fn from_delimiters() {
+    assert_eq!(
+        &format!(
+            "{}",
+            Delimiters {
+                name: "David".to_string(),
+                age: 45
+            }
+            .display_as(HTML)
+        ),
+        "FromFile: grown-up David who is 45 years old (THE END)\n"
+    );
+    assert_eq!(
+        &format!(
+            "{}",
+            Delimiters {
+                name: "Miri".to_string(),
+                age: 2
+            }
+            .display_as(HTML)
+        ),
+        "FromFile: minor Miri (THE END)\n"
+    );
+}

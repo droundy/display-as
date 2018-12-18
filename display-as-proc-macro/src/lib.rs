@@ -89,7 +89,7 @@ pub fn format_as(input: TokenStream) -> TokenStream {
     let statements = proc_to_two(template_to_statements(
         "templates".as_ref(),
         &format,
-        tokens.collect(),
+        tokens.collect(), "", ""
     ));
 
     quote!(
@@ -145,7 +145,7 @@ pub fn write_as(input: TokenStream) -> TokenStream {
     let statements = proc_to_two(template_to_statements(
         "templates".as_ref(),
         &format,
-        tokens.collect(),
+        tokens.collect(), "", ""
     ));
 
     quote!(
@@ -191,14 +191,23 @@ fn expr_toks_to_conditional(expr: &mut Vec<TokenTree>) -> TokenStream {
     expr.drain(..).collect()
 }
 
-fn read_template_file(dirname: &Path, pathname: &str) -> TokenStream {
+fn read_template_file(dirname: &Path, pathname: &str,
+                      left_delim: &str, right_delim: &str) -> TokenStream {
     let path = dirname.join(&pathname);
     if let Ok(mut f) = File::open(&path) {
         let mut contents = String::new();
         f.read_to_string(&mut contents)
             .expect("something went wrong reading the file");
         let raw_template_len = contents.len();
-        let pounds = count_pounds(&contents);
+        let pounds: String = if left_delim == "" {
+            count_pounds(&contents).to_string()
+        } else {
+            let mut pounds = count_pounds(&contents).to_string();
+            pounds.write_str("#").unwrap();
+            contents = contents.replace(left_delim, &format!(r#""{}"#, pounds));
+            contents = contents.replace(right_delim, &format!(r#"r{}""#, pounds));
+            pounds
+        };
         contents.write_str("\"").unwrap();
         contents.write_str(&pounds).unwrap();
         let mut template = "r".to_string();
@@ -220,7 +229,9 @@ fn template_to_statements(
     dir: &Path,
     format: &proc_macro2::TokenStream,
     template: TokenStream,
-) -> TokenStream {
+    left_delim: &str,
+    right_delim: &str) -> TokenStream
+{
     let mut toks: Vec<TokenTree> = Vec::new();
     let mut next_expr: Vec<TokenTree> = Vec::new();
     for t in template.into_iter() {
@@ -235,7 +246,8 @@ fn template_to_statements(
                     // thingy, so let's create a DisplayAs thingy
                     // rather than adding the stuff right now.
                     toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
-                    let actions = proc_to_two(template_to_statements(dir, format, g.stream()));
+                    let actions = proc_to_two(template_to_statements(dir, format, g.stream(),
+                                                                     left_delim, right_delim));
                     toks.extend(
                         two_to_proc(quote! {
                             |_format: #format, __f: &mut ::std::fmt::Formatter|
@@ -250,7 +262,8 @@ fn template_to_statements(
                     toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
                     toks.push(TokenTree::Group(Group::new(
                         Delimiter::Brace,
-                        template_to_statements(dir, format, g.stream()),
+                        template_to_statements(dir, format, g.stream(),
+                                               left_delim, right_delim),
                     )));
                 }
             } else if g.delimiter() == Delimiter::Parenthesis
@@ -267,8 +280,9 @@ fn template_to_statements(
                     );
                 }
                 let filename = filenames[0].to_string().replace("\"", "");
-                let templ = read_template_file(dir, &filename);
-                let statements = template_to_statements(dir, format, templ);
+                let templ = read_template_file(dir, &filename, left_delim, right_delim);
+                let statements = template_to_statements(dir, format, templ,
+                                                        left_delim, right_delim);
                 next_expr.extend(statements.into_iter());
                 next_expr.extend(to_tokens(";").into_iter());
                 toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
@@ -329,6 +343,11 @@ fn template_to_statements(
 /// the beginning or ending quotation marks.  Furthermore, it is
 /// assumed that you are using raw strings, and that you use an equal
 /// number of `#` signs throughout.
+///
+/// You may also give **three** strings to `with_template`, in which
+/// case the first two strings are the left and right delimiters for
+/// rust content.  This can make your template files a little easier
+/// to read.
 #[proc_macro_attribute]
 pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     let sourcefile = find_source(input.clone()).expect("Unable to locate source file");
@@ -359,13 +378,27 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     let my_format = my_format; // no longer mut
 
     let input_vec: Vec<_> = input.clone().into_iter().collect();
+    let mut left_delim = "".to_string();
+    let mut right_delim = "".to_string();
     let input = if input_vec.len() == 1 {
         let pathname = input_vec[0].to_string().replace("\"", "");
-        read_template_file(&sourcedir, &pathname)
+        read_template_file(&sourcedir, &pathname, "", "")
+    } else if input_vec.len() == 3
+        && input_vec[0].to_string().contains("\"")
+        && input_vec[1].to_string().contains("\"")
+        && input_vec[2].to_string().contains("\"")
+    {
+        // If we have three string literals, the first two are the
+        // delimiters we want to use.
+        let pathname = input_vec[2].to_string().replace("\"", "");
+        left_delim = input_vec[0].to_string().replace("\"", "");
+        right_delim = input_vec[1].to_string().replace("\"", "");
+        read_template_file(&sourcedir, &pathname, &left_delim, &right_delim)
     } else {
         input
     };
-    let statements = proc_to_two(template_to_statements(&sourcedir, &my_format, input));
+    let statements = proc_to_two(template_to_statements(&sourcedir, &my_format, input,
+                                                        &left_delim, &right_delim));
 
     let out = quote! {
         {
