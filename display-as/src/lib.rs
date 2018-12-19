@@ -237,6 +237,7 @@ mod latex;
 mod mathlatex;
 mod rust;
 mod url;
+mod utf8;
 
 pub mod float;
 
@@ -245,6 +246,7 @@ pub use crate::url::URL;
 pub use crate::latex::LaTeX;
 pub use crate::mathlatex::Math;
 pub use crate::rust::Rust;
+pub use crate::utf8::UTF8;
 
 /// Format is a format that we can use for displaying data.
 pub trait Format {
