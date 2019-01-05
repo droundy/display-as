@@ -1,4 +1,4 @@
-use display_as::{format_as, DisplayAs, URL, HTML};
+use display_as::{format_as, URL, HTML};
 
 #[test]
 fn mixed_types() {
