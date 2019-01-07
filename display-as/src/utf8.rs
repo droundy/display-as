@@ -23,13 +23,13 @@ display_floats_as!(UTF8, "e", "", 1, None);
 
 #[test]
 fn escaping() {
-    assert_eq!(&format!("{}", "&".display_as(UTF8)), "&");
+    assert_eq!(&format_as!(UTF8, ("&")), "&");
 }
 #[test]
 fn floats() {
-    assert_eq!(&format!("{}", 3.0.display_as(UTF8)), "3");
-    assert_eq!(&format!("{}", 3e5.display_as(UTF8)), "3e5");
-    assert_eq!(&format!("{}", 3e4.display_as(UTF8)), "3e4");
-    assert_eq!(&format!("{}", 3e3.display_as(UTF8)), "3e3");
-    assert_eq!(&format!("{}", 3e2.display_as(UTF8)), "300");
+    assert_eq!(&format_as!(UTF8, 3.0), "3");
+    assert_eq!(&format_as!(UTF8, 3e5), "3e5");
+    assert_eq!(&format_as!(UTF8, 3e4), "3e4");
+    assert_eq!(&format_as!(UTF8, 3e3), "3e3");
+    assert_eq!(&format_as!(UTF8, 3e2), "300");
 }

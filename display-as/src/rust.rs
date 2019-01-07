@@ -21,13 +21,13 @@ display_floats_as!(Rust, "e", "", 1, None);
 
 #[test]
 fn escaping() {
-    assert_eq!(&format!("{}", "&".display_as(Rust)), r#""&""#);
+    assert_eq!(&format_as!(Rust, ("&")), r#""&""#);
 }
 #[test]
 fn floats() {
-    assert_eq!(&format!("{}", 3.0.display_as(Rust)), "3");
-    assert_eq!(&format!("{}", 3e5.display_as(Rust)), "3e5");
-    assert_eq!(&format!("{}", 3e4.display_as(Rust)), "3e4");
-    assert_eq!(&format!("{}", 3e3.display_as(Rust)), "3e3");
-    assert_eq!(&format!("{}", 3e2.display_as(Rust)), "300");
+    assert_eq!(&format_as!(Rust, 3.0), "3");
+    assert_eq!(&format_as!(Rust, 3e5), "3e5");
+    assert_eq!(&format_as!(Rust, 3e4), "3e4");
+    assert_eq!(&format_as!(Rust, 3e3), "3e3");
+    assert_eq!(&format_as!(Rust, 3e2), "300");
 }

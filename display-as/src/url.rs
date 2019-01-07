@@ -23,13 +23,13 @@ display_floats_as!(URL, "e", "", 1, None);
 
 #[test]
 fn escaping() {
-    assert_eq!(&format!("{}", "&".display_as(URL)), "&");
+    assert_eq!(&format_as!(URL, ("&")), "&");
     assert_eq!(
-        &format!("{}", "hello &>this is cool".display_as(URL)),
+        &format_as!(URL, ("hello &>this is cool")),
         "hello%20&%3Ethis%20is%20cool"
     );
     assert_eq!(
-        &format!("{}", "hello &>this is 'cool".display_as(URL)),
+        &format_as!(URL, ("hello &>this is 'cool")),
         "hello%20&%3Ethis%20is%20\'cool"
     );
 }

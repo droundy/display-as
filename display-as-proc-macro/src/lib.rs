@@ -95,7 +95,7 @@ pub fn format_as(input: TokenStream) -> TokenStream {
     quote!(
         {
             use std::fmt::Write;
-            use display_as::DisplayAs;
+            use $crate::DisplayAs;
             let doit = || -> Result<String, std::fmt::Error> {
                 let mut __f = String::new();
                 #statements
@@ -151,7 +151,7 @@ pub fn write_as(input: TokenStream) -> TokenStream {
     quote!(
         {
             use std::fmt::Write;
-            use display_as::DisplayAs;
+            use $crate::DisplayAs;
             let __f = &mut #writer;
             let mut doit = || -> Result<(), std::fmt::Error> {
                 #statements

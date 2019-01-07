@@ -286,7 +286,7 @@ fn test_closure() {
         __f.write_str("hello world")?;
         Ok(())
     };
-    assert_eq!("hello world", &format!("{}", x.display_as(HTML)));
+    assert_eq!("hello world", &format_as!(HTML, x));
 }
 
 /// Choose to [Display](std::fmt::Display) this type using a particular [Format] `F`.
@@ -399,16 +399,16 @@ impl<'a, F: Format> DisplayAs<F> for &'a str {
 
 #[cfg(test)]
 mod tests {
-    use super::{DisplayAs, HTML};
+    use super::{HTML};
     #[test]
     fn html_escaping() {
-        assert_eq!(&format!("{}", "&".display_as(HTML)), "&amp;");
+        assert_eq!(&format_as!(HTML, ("&")), "&amp;");
         assert_eq!(
-            &format!("{}", "hello &>this is cool".display_as(HTML)),
+            &format_as!(HTML, ("hello &>this is cool")),
             "hello &amp;&gt;this is cool"
         );
         assert_eq!(
-            &format!("{}", "hello &>this is 'cool".display_as(HTML)),
+            &format_as!(HTML, ("hello &>this is 'cool")),
             "hello &amp;&gt;this is &#x27;cool"
         );
     }

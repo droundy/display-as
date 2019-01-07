@@ -41,19 +41,19 @@ display_floats_as!(LaTeX, r"$\times10^{", "}$", 3, Some("$10^{"));
 
 #[test]
 fn escaping() {
-    assert_eq!(&format!("{}", "&".display_as(LaTeX)), r"\&");
+    assert_eq!(&format_as!(LaTeX, ("&")), r"\&");
     assert_eq!(
-        &format!("{}", "hello &>this is cool".display_as(LaTeX)),
+        &format_as!(LaTeX, ("hello &>this is cool")),
         r"hello \&>this is cool"
     );
     assert_eq!(
-        &format!("{}", "hello &>this is 'cool".display_as(LaTeX)),
+        &format_as!(LaTeX, ("hello &>this is 'cool")),
         r"hello \&>this is 'cool"
     );
 }
 #[test]
 fn floats() {
-    assert_eq!(&format!("{}", 3.0.display_as(LaTeX)), "3");
-    assert_eq!(&format!("{}", 3e5.display_as(LaTeX)), r"3$\times10^{5}$");
-    assert_eq!(&format!("{}", 3e4.display_as(LaTeX)), "30000");
+    assert_eq!(&format_as!(LaTeX, 3.0), "3");
+    assert_eq!(&format_as!(LaTeX, 3e5), r"3$\times10^{5}$");
+    assert_eq!(&format_as!(LaTeX, 3e4), "30000");
 }
