@@ -379,25 +379,25 @@ pub mod gotham {
 /// The `warp` feature flag makes any [DisplayAs] type Into<[http::Response]>.
 #[cfg(feature = "warp")]
 pub mod warp {
-    use crate::{DisplayAs, Format};
-    /// Generate a response for warp.
-    pub fn http_response<F: Format, T: DisplayAs<F>>(_format: F, x: T)
-                                                 -> http::Response<String>
-    {
-        let s = format!("{}", x.display());
-        let m = F::mime().as_ref().to_string();
-        let mut response = http::Response::builder();
-        response
-            .header("Content-type", m.as_bytes())
-            .status(http::StatusCode::OK);
-        response.body(s).unwrap()
+    use crate::{DisplayAs, Format, As};
+    impl<'a, F: Format, T: DisplayAs<F>> As<'a, F, T> {
+        /// Convert into a [warp::Reply].
+        pub fn http_response(&self) -> http::Response<String> {
+            let s = format!("{}", self);
+            let m = F::mime().as_ref().to_string();
+            let mut response = http::Response::builder();
+            response
+                .header("Content-type", m.as_bytes())
+                .status(http::StatusCode::OK);
+            response.body(s).unwrap()
+        }
     }
 
     #[test]
     fn test_warp() {
-        use crate::HTML;
+        use crate::{HTML, display};
         // This sloppy test just verify that the code runs.
-        http_response(HTML, "hello world");
+        display(HTML, &"hello world".to_string()).http_response();
     }
 }
 
