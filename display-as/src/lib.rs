@@ -269,7 +269,7 @@ pub trait DisplayAs<F: Format> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error>;
 
     /// Creates a display object
-    fn display_as<'a>(&'a self, _format: F) -> As<'a, F, Self> {
+    fn display<'a>(&'a self) -> As<'a, F, Self> {
         As::from(self)
     }
 }
@@ -305,12 +305,12 @@ fn test_closure() {
 /// Choose to [Display](std::fmt::Display) this type using a particular [Format] `F`.
 pub struct As<'a, F: Format, T: DisplayAs<F> + ?Sized> {
     inner: &'a T,
-    phantom: std::marker::PhantomData<F>,
+    _format: F,
 }
 impl<'a, F: Format, T: DisplayAs<F> + ?Sized> From<&'a T> for As<'a, F, T> {
     fn from(value: &'a T) -> Self {
         As {
-            phantom: std::marker::PhantomData,
+            _format: F::this_format(),
             inner: value,
         }
     }

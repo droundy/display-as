@@ -35,6 +35,14 @@ fn integer_reference() {
         format_as!(HTML, r"Number " &3u64 r" is odd"),
         r"Number 3 is odd"
     );
+    assert_eq!(
+        format_as!(HTML, r"Number " 3u64 r" is odd"),
+        r"Number 3 is odd"
+    );
+    assert_eq!(
+        format_as!(HTML, r"Number " &&3u64 r" is odd"),
+        r"Number 3 is odd"
+    );
 }
 #[test]
 fn string_and_float() {

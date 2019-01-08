@@ -1,6 +1,6 @@
 extern crate display_as;
 
-use display_as::{with_template, DisplayAs, HTML, URL};
+use display_as::{with_template, DisplayAs, HTML, URL, format_as};
 
 struct Foo {
     name: String,
@@ -19,7 +19,7 @@ fn foo() {
                 name: "David".to_string(),
                 age: 45
             }
-            .display_as(HTML)
+            .display()
         ),
         "Foo: David with age 45"
     );
@@ -49,7 +49,7 @@ fn testing_if() {
                 name: "David".to_string(),
                 age: 45
             }
-            .display_as(HTML)
+            .display()
         ),
         "TestingIf: grown-up David who is 45 years old (THE END)"
     );
@@ -60,7 +60,7 @@ fn testing_if() {
                 name: "Miri".to_string(),
                 age: 2
             }
-            .display_as(HTML)
+            .display()
         ),
         "TestingIf: minor Miri (THE END)"
     );
@@ -83,7 +83,7 @@ fn from_file() {
                 name: "David".to_string(),
                 age: 45
             }
-            .display_as(HTML)
+            .display()
         ),
         "FromFile: grown-up David who is 45 years old (THE END)\n"
     );
@@ -94,7 +94,7 @@ fn from_file() {
                 name: "Miri".to_string(),
                 age: 2
             }
-            .display_as(HTML)
+            .display()
         ),
         "FromFile: minor Miri (THE END)\n"
     );
@@ -117,7 +117,7 @@ fn from_file_include() {
                 name: "David".to_string(),
                 age: 45
             }
-            .display_as(HTML)
+            .display()
         ),
         "FromFile: grown-up David who is 45 years old (THE END)\n\n"
     );
@@ -128,7 +128,7 @@ fn from_file_include() {
                 name: "Miri".to_string(),
                 age: 2
             }
-            .display_as(HTML)
+            .display()
         ),
         "FromFile: minor Miri (THE END)\n\n"
     );
@@ -147,25 +147,17 @@ impl DisplayAs<URL> for FromFileBase {}
 #[test]
 fn from_file_base() {
     assert_eq!(
-        &format!(
-            "{}",
-            FromFileBase {
-                name: "David".to_string(),
-                age: 45
-            }
-            .display_as(HTML)
-        ),
+        &format_as!(HTML, (FromFileBase {
+            name: "David".to_string(),
+            age: 45
+        })),
         "FromFile: grown-up url/David who is 45 years old (THE END)\n\n"
     );
     assert_eq!(
-        &format!(
-            "{}",
-            FromFileBase {
-                name: "Miri".to_string(),
-                age: 2
-            }
-            .display_as(HTML)
-        ),
+        &format_as!(HTML, (FromFileBase {
+            name: "Miri".to_string(),
+            age: 2
+        })),
         "FromFile: minor url/Miri (THE END)\n\n"
     );
 }
@@ -187,7 +179,7 @@ fn from_delimiters() {
                 name: "David".to_string(),
                 age: 45
             }
-            .display_as(HTML)
+            .display()
         ),
         "FromFile: grown-up David who is 45 years old (THE END)\n"
     );
@@ -198,7 +190,7 @@ fn from_delimiters() {
                 name: "Miri".to_string(),
                 age: 2
             }
-            .display_as(HTML)
+            .display()
         ),
         "FromFile: minor Miri (THE END)\n"
     );

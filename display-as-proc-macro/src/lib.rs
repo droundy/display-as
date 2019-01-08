@@ -173,14 +173,30 @@ fn expr_toks_to_stmt(
         expr.pop();
         let expr = proc_to_two(expr.drain(..).collect());
         two_to_proc(quote! {
-            __f.write_fmt(format_args!("{}", (#expr).display_as(#format)))?;
+            {
+                trait ToDisplayAs {
+                    fn to_display_as(&self) -> &Self;
+                }
+                impl<T: DisplayAs<#format>> ToDisplayAs for T {
+                    fn to_display_as(&self) -> &Self { self }
+                }
+                __f.write_fmt(format_args!("{}", <_ as DisplayAs<#format>>::display((#expr).to_display_as())))?;
+            }
         })
         .into_iter()
     } else if expr.len() > 0 {
         let expr = proc_to_two(expr.drain(..).collect());
         let format = format.clone();
         two_to_proc(quote! {
-            __f.write_fmt(format_args!("{}", (#expr).display_as(#format)))?;
+            {
+                trait ToDisplayAs {
+                    fn to_display_as(&self) -> &Self;
+                }
+                impl<T: DisplayAs<#format>> ToDisplayAs for T {
+                    fn to_display_as(&self) -> &Self { self }
+                }
+                __f.write_fmt(format_args!("{}", <_ as DisplayAs<#format>>::display((#expr).to_display_as())))?;
+            }
         })
         .into_iter()
     } else {
