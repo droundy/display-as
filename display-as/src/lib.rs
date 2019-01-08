@@ -274,6 +274,11 @@ pub trait DisplayAs<F: Format> {
     }
 }
 
+/// Create a Display object, which can be used with various web frameworks.
+pub fn display<'a, F: Format, T: DisplayAs<F>>(_f: F, x: &'a T) -> As<'a, F, T> {
+    x.display()
+}
+
 struct Closure<F: Format, C: Fn(&mut Formatter) -> Result<(), Error>> {
     f: C,
     _format: F,
@@ -371,14 +376,14 @@ pub mod gotham {
     }
 }
 
-/// The `warp` feature flag makes any [As] type Into<[http::Response]>.
+/// The `warp` feature flag makes any [DisplayAs] type Into<[http::Response]>.
 #[cfg(feature = "warp")]
 pub mod warp {
-    use crate::{As, DisplayAs, Format};
-    impl<'a, F: Format, T: 'a + DisplayAs<F>> As<'a, F, T> {
+    use crate::{As, DisplayAs, Format, format_as};
+    impl<F: Format, T: DisplayAs<F>> T {
         /// Convert into a [warp::Reply].
-        pub fn into_reply(self) -> http::Response<String> {
-            let s = format!("{}", &self);
+        pub fn into_reply(self, format: F) -> http::Response<String> {
+            let s = format!("{}", self.display());
             let m = F::mime().as_ref().to_string();
             let mut response = http::Response::builder();
             response
