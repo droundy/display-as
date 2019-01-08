@@ -380,7 +380,8 @@ pub mod gotham {
 #[cfg(feature = "warp")]
 pub mod warp {
     use crate::{DisplayAs, Format};
-    fn http_response<F: Format, T: DisplayAs<F>>(_format: F, x: T)
+    /// Generate a response for warp.
+    pub fn http_response<F: Format, T: DisplayAs<F>>(_format: F, x: T)
                                                  -> http::Response<String>
     {
         let s = format!("{}", x.display());
