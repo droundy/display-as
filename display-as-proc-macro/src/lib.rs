@@ -250,11 +250,16 @@ fn template_to_statements(
                                                                      left_delim, right_delim));
                     toks.extend(
                         two_to_proc(quote! {
-                            |_format: #format, __f: &mut ::std::fmt::Formatter|
+                            display_as::display_closure_as(#format, |__f: &mut ::std::fmt::Formatter|
                                  -> Result<(), ::std::fmt::Error> {
                                 { #actions };
                                 Ok(())
-                            }
+                            })
+                            // |_format: #format, __f: &mut ::std::fmt::Formatter|
+                            //      -> Result<(), ::std::fmt::Error> {
+                            //     { #actions };
+                            //     Ok(())
+                            // }
                         })
                         .into_iter(),
                     );

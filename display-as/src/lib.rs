@@ -274,19 +274,32 @@ pub trait DisplayAs<F: Format> {
     }
 }
 
-impl<F: Format, C: for<'a> Fn(F, &'a mut Formatter) -> Result<(), Error>> DisplayAs<F> for C {
+struct Closure<F: Format, C: Fn(&mut Formatter) -> Result<(), Error>> {
+    f: C,
+    _format: F,
+}
+/// Display the given closure as this format.
+///
+/// This is used internally in template handling.
+pub fn display_closure_as<F: Format>(f: F, c: impl Fn(&mut Formatter) -> Result<(), Error>) -> impl DisplayAs<F> {
+    Closure {
+        f: c,
+        _format: f,
+    }
+}
+impl<F: Format, C: Fn(&mut Formatter) -> Result<(), Error>> DisplayAs<F> for Closure<F,C> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        self(F::this_format(), f)
+        (self.f)(f)
     }
 }
 
 #[test]
 fn test_closure() {
-    let x = |_format: HTML, __f: &mut Formatter| -> Result<(), Error> {
+    let x = |__f: &mut Formatter| -> Result<(), Error> {
         __f.write_str("hello world")?;
         Ok(())
     };
-    assert_eq!("hello world", &format_as!(HTML, x));
+    assert_eq!("hello world", &format_as!(HTML, display_closure_as(HTML, x)));
 }
 
 /// Choose to [Display](std::fmt::Display) this type using a particular [Format] `F`.
