@@ -15,22 +15,22 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-fn find_source(tokens: TokenStream) -> Option<PathBuf> {
-    for path in glob::glob("**/*.rs").unwrap() {
-        if let Ok(path) = path {
-            if let Ok(mut f) = File::open(&path) {
-                let mut contents = String::new();
-                f.read_to_string(&mut contents).ok();
-                if let Ok(all_tokens) = contents.parse::<TokenStream>() {
-                    // This can be parsed
-                    if all_tokens.to_string().contains(&tokens.to_string()) {
-                        return Some(path.to_owned());
-                    }
-                }
-            }
-        }
+fn find_template_file(path: &str) -> PathBuf {
+    let sourcedirs: std::collections::HashSet<_> = glob::glob("**/*.rs").unwrap()
+        .flat_map(|x| x.ok())
+        .filter(|x| !x.starts_with("target/"))
+        .map(|x| PathBuf::from(x.clone().parent().unwrap()))
+        .collect();
+    let paths: Vec<_> = sourcedirs.into_iter()
+        .filter(|d| d.join(path).exists())
+        .collect();
+    if paths.len() == 0 {
+        panic!("No template file named {:?} exists.", path);
+    } else if paths.len() > 1 {
+        panic!(r"Multiple files named {:?} exist.  Eventually display-as will
+    support this, but for now each template file must have a unique name.", path);
     }
-    None
+    paths.into_iter().next().unwrap()
 }
 
 fn proc_to_two(i: TokenStream) -> proc_macro2::TokenStream {
@@ -371,12 +371,7 @@ fn template_to_statements(
 /// to read.
 #[proc_macro_attribute]
 pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
-    let sourcefile = find_source(input.clone()).expect("Unable to locate source file");
-    let sourcedir = if let Some(d) = sourcefile.parent() {
-        PathBuf::from(d)
-    } else {
-        PathBuf::from(".")
-    };
+    let mut sourcedir = PathBuf::from(".");
 
     let mut impl_toks: Vec<_> = my_impl.into_iter().collect();
     if &impl_toks[0].to_string() != "impl" || impl_toks.len() < 3 {
@@ -403,6 +398,7 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     let mut right_delim = "".to_string();
     let input = if input_vec.len() == 1 {
         let pathname = input_vec[0].to_string().replace("\"", "");
+        sourcedir = find_template_file(&pathname);
         read_template_file(&sourcedir, &pathname, "", "")
     } else if input_vec.len() == 3
         && input_vec[0].to_string().contains("\"")
@@ -412,6 +408,7 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
         // If we have three string literals, the first two are the
         // delimiters we want to use.
         let pathname = input_vec[2].to_string().replace("\"", "");
+        sourcedir = find_template_file(&pathname);
         left_delim = input_vec[0].to_string().replace("\"", "");
         right_delim = input_vec[1].to_string().replace("\"", "");
         read_template_file(&sourcedir, &pathname, &left_delim, &right_delim)
