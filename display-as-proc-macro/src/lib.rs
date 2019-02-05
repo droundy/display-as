@@ -279,6 +279,26 @@ fn template_to_statements(
                         })
                         .into_iter(),
                     );
+                } else if &next_expr[0].to_string() == "match" {
+                    toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
+                    let mut interior_toks: Vec<TokenTree> = Vec::new();
+                    for x in g.stream() {
+                        if let TokenTree::Group(g) = x.clone() {
+                            if g.delimiter() == Delimiter::Brace {
+                                interior_toks.push(TokenTree::Group(Group::new(
+                                    Delimiter::Brace,
+                                    template_to_statements(dir, format, g.stream(),
+                                                           left_delim, right_delim),
+                                    )));
+                            } else {
+                                interior_toks.push(x);
+                            }
+                        } else {
+                            interior_toks.push(x);
+                        }
+                    }
+                    toks.push(TokenTree::Group(Group::new(Delimiter::Brace,
+                                                          interior_toks.into_iter().collect())));
                 } else {
                     toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
                     toks.push(TokenTree::Group(Group::new(
