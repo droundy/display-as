@@ -138,7 +138,7 @@
 //! You will most likely always put largish templates in a separate
 //! file.  This makes editing your template simpler and keeps things
 //! in general easier.  The template language for templates held in a
-//! distinct file has one differnce from those shown above: the file
+//! distinct file has one difference from those shown above: the file
 //! always begins and ends with string literals, but their initial and
 //! final quotes respectively are omitted.  Furthermore, the first and
 //! last string literals must be "raw" literals with a number of #
