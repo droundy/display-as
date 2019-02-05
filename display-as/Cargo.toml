@@ -1,6 +1,6 @@
 [package]
 name = "display-as"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["David Roundy <roundyd@physics.oregonstate.edu>"]
 description = "Compile-time templates for displaying data in different markup formats."
 repository = "https://github.com/droundy/display-as"
@@ -19,7 +19,7 @@ all-features = true
 
 [dependencies]
 
-display-as-proc-macro = { version = "0.4.0", path = "../display-as-proc-macro" }
+display-as-proc-macro = { version = "0.4.1", path = "../display-as-proc-macro" }
 proc-macro-hack = "0.5"
 
 mime = "0.3.12"
