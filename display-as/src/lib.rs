@@ -220,8 +220,15 @@ extern crate display_as_proc_macro;
 extern crate mime;
 extern crate proc_macro_hack;
 
+/// Use the given template to create a string.
+///
+/// You can think of this as being kind of like `format!` on strange drugs.
 #[proc_macro_hack]
 pub use display_as_proc_macro::format_as;
+
+/// Write the given template to a file.
+///
+/// You can think of this as being kind of like `write!` on strange drugs.
 #[proc_macro_hack]
 pub use display_as_proc_macro::write_as;
 use proc_macro_hack::proc_macro_hack;
