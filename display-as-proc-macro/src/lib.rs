@@ -255,6 +255,21 @@ fn template_to_statements(
             let next_expr_len = next_expr.len();
             if g.delimiter() == Delimiter::Brace {
                 if next_expr_len > 2
+                    && !next_expr.iter().any(|x| x.to_string() == "=")
+                    && &next_expr[0].to_string() == "if"
+                    && &next_expr[1].to_string() == "let"
+                {
+                    // We presumably are looking at a destructuring
+                    // pattern.
+                    next_expr.push(t);
+                } else if next_expr_len > 1
+                    && &next_expr[next_expr_len - 1].to_string() != "="
+                    && &next_expr[0].to_string() == "let"
+                {
+                    // We presumably are looking at a destructuring
+                    // pattern.
+                    next_expr.push(t);
+                } else if next_expr_len > 2
                     && &next_expr[next_expr_len - 1].to_string() == "="
                     && &next_expr[0].to_string() == "let"
                 {
@@ -279,7 +294,7 @@ fn template_to_statements(
                         })
                         .into_iter(),
                     );
-                } else if &next_expr[0].to_string() == "match" {
+                } else if next_expr_len > 0 && &next_expr[0].to_string() == "match" {
                     toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
                     let mut interior_toks: Vec<TokenTree> = Vec::new();
                     for x in g.stream() {
