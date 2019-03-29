@@ -14,6 +14,7 @@ fn test_if_let() {
     );
 }
 
+#[test]
 fn test_let_with_braces_match() {
     struct Foo { x: usize };
     let foo = Foo { x: 37 };
