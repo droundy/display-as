@@ -97,7 +97,7 @@ pub fn format_as(input: TokenStream) -> TokenStream {
             use std::fmt::Write;
             use $crate::DisplayAs;
             let doit = || -> Result<String, std::fmt::Error> {
-                let mut __f = String::new();
+                let mut __f = String::with_capacity(32);
                 #statements
                 Ok(__f)
             };
