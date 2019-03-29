@@ -1,0 +1,5 @@
+<table>
+[% for row in self.table.iter() { %]
+<tr>[% for col in row.iter() { %]<td>[% col %]</td>[% } %]</tr>
+[% } %]
+</table>

@@ -275,6 +275,11 @@ pub trait DisplayAs<F: Format> {
     /// Formats the value using the given formatter.
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error>;
 
+    /// Estimate the size of this when displayed
+    fn estimate_size(&self) -> usize {
+        4
+    }
+
     /// Creates a display object
     fn display<'a>(&'a self) -> As<'a, F, Self> {
         As::from(self)
