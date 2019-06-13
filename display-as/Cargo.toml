@@ -9,6 +9,9 @@ license = "Apache-2.0/MIT"
 edition = "2018"
 readme = "README.md"
 
+[badges]
+travis-ci = { repository = "droundy/display-as", branch = "master" }
+
 [features]
 
 gotham-web = ["gotham", "hyper", "http"]
