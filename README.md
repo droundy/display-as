@@ -1,6 +1,7 @@
 # DisplayAs
 
 [![Documentation](https://docs.rs/display-as/badge.svg)](https://docs.rs/display-as)
+[![Build Status](https://travis-ci.org/droundy/display-as.svg?branch=master)](https://travis-ci.org/droundy/display-as)
 
 These crates creates rusty templates that are evaluated at
 compile-time (much like [askama](https://docs.rs/askama)).
