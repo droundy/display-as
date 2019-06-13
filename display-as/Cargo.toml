@@ -1,12 +1,13 @@
 [package]
 name = "display-as"
-version = "0.4.5"
+version = "0.4.6"
 authors = ["David Roundy <roundyd@physics.oregonstate.edu>"]
 description = "Compile-time templates for displaying data in different markup formats."
 repository = "https://github.com/droundy/display-as"
 keywords = ["template", "latex", "html", "display"]
 license = "Apache-2.0/MIT"
 edition = "2018"
+readme = "README.md"
 
 [features]
 
