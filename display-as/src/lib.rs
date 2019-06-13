@@ -202,18 +202,15 @@
 //! };
 //! assert_eq!(&format_as!(HTML, myclass), r#"<title>PH365: Templates</title>
 //! <html>
-//!   <ul>
-//!
-//!   // This is buggy:  I want to iterate, but it fails!
-//!   for s in self.students.iter() {
-//!     "<li>" s "</li>"
-//!   }
-//!
-//!   </ul>
+//!   <ul><li><span class="student">Name: David</span>
+//! 
+//! </li><li><span class="student">Name: Joel</span>
+//! 
+//! </li></ul>
 //! </html>
 //!
 //!
-//!"#);
+//! "#);
 //! ```
 
 extern crate display_as_proc_macro;
