@@ -6,7 +6,7 @@ use super::*;
 pub struct Rust;
 impl Format for Rust {
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {
-        (&s as &std::fmt::Debug).fmt(f)
+        (&s as &dyn std::fmt::Debug).fmt(f)
     }
     fn mime() -> mime::Mime {
         return "text/x-rust".parse().unwrap();

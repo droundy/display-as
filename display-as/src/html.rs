@@ -37,7 +37,7 @@ macro_rules! display_as_from_display {
     ($format:ty, $type:ty) => {
         impl DisplayAs<$format> for $type {
             fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-                (&self as &Display).fmt(f)
+                (&self as &dyn Display).fmt(f)
             }
         }
     };
