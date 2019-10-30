@@ -21,7 +21,7 @@ fn test_loop_no_let() {
     assert_eq!(
         format_as!(
             HTML,
-            for i in [1u8, 2].into_iter() {
+            for i in [1u8, 2].iter() {
                 "counting " * i
             }
         ),
@@ -33,7 +33,7 @@ fn test_loop_no_let() {
 fn test_loop_no_let_b() {
     assert_eq!(
         format_as!(HTML,
-        for i in [1u8,2].into_iter() {
+        for i in [1u8,2].iter() {
             let j: u8 = *i;
             "counting " j
         }),
