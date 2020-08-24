@@ -1,6 +1,6 @@
 [package]
 name = "display-as"
-version = "0.4.7"
+version = "0.5.0"
 authors = ["David Roundy <roundyd@physics.oregonstate.edu>"]
 description = "Compile-time templates for displaying data in different markup formats."
 repository = "https://github.com/droundy/display-as"
@@ -16,7 +16,7 @@ travis-ci = { repository = "droundy/display-as", branch = "master" }
 
 gotham-web = ["gotham", "hyper", "http"]
 docinclude = []
-warp = ["http"]
+usewarp = ["warp", "http", "hyper"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -32,8 +32,9 @@ percent-encoding = "1.0.1"
 rouille = { version = "2.2.0", optional = true }
 actix-web = { version = "0.7.14", optional = true }
 gotham = { version = "0.3.0", optional = true }
-hyper = { version = "0.12.13", optional = true }
-http = { version = "0.1.13", optional = true }
+hyper = { version = "0.13", optional = true }
+http = { version = "0.2.1", optional = true }
+warp = { version = "0.2.4", optional = true }
 
 [dev-dependencies]
 criterion = "0.2"

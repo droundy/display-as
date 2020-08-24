@@ -253,7 +253,7 @@ pub use crate::rust::Rust;
 pub use crate::utf8::UTF8;
 
 /// Format is a format that we can use for displaying data.
-pub trait Format {
+pub trait Format: Sync+Send {
     /// "Escape" the given string so it can be safely displayed in
     /// this format.  The precise meaning of this may vary from format
     /// to format, but the general sense is that this string does not
@@ -379,34 +379,34 @@ pub mod gotham {
     use crate::{As, DisplayAs, Format};
     impl<'a, F: Format, T: 'a + DisplayAs<F>> gotham::handler::IntoResponse for As<'a, F, T> {
         fn into_response(self, state: &gotham::state::State) -> http::Response<hyper::Body> {
-            let s = format!("{}", &self);
+            let s = format!("{}", self);
             (http::StatusCode::OK, F::mime(), s).into_response(state)
         }
     }
 }
 
-/// The `warp` feature flag makes any [DisplayAs] type Into<[http::Response]>.
-#[cfg(feature = "warp")]
+/// The `usewarp` feature flag makes any [DisplayAs] type a [warp::Reply].
+#[cfg(feature = "usewarp")]
 pub mod warp {
     use crate::{DisplayAs, Format, As};
-    impl<'a, F: Format, T: DisplayAs<F>> As<'a, F, T> {
+    impl<'a, F: Format, T: DisplayAs<F>+Sync> warp::Reply for As<'a, F, T> {
         /// Convert into a [warp::Reply].
-        pub fn http_response(&self) -> http::Response<String> {
+        fn into_response(self) -> warp::reply::Response {
             let s = format!("{}", self);
             let m = F::mime().as_ref().to_string();
-            let mut response = http::Response::builder();
-            response
+            http::Response::builder()
                 .header("Content-type", m.as_bytes())
-                .status(http::StatusCode::OK);
-            response.body(s).unwrap()
+                .status(http::StatusCode::OK)
+                .body(s).unwrap().map(hyper::Body::from)
         }
     }
 
     #[test]
     fn test_warp() {
         use crate::{HTML, display};
+        use warp::Reply;
         // This sloppy test just verify that the code runs.
-        display(HTML, &"hello world".to_string()).http_response();
+        display(HTML, &"hello world".to_string()).into_response();
     }
 }
 
