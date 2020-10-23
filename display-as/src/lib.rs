@@ -203,9 +203,9 @@
 //! assert_eq!(&format_as!(HTML, myclass), r#"<title>PH365: Templates</title>
 //! <html>
 //!   <ul><li><span class="student">Name: David</span>
-//! 
+//!
 //! </li><li><span class="student">Name: Joel</span>
-//! 
+//!
 //! </li></ul>
 //! </html>
 //!
