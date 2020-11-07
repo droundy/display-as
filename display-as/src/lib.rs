@@ -373,14 +373,16 @@ pub mod actix {
 }
 
 /// The `gotham-web` feature flag makes any [As] type a
-/// [gotham::IntoResponse].
-#[cfg(feature = "gotham-web")]
+/// [::gotham::handler::IntoResponse].
+#[cfg(feature = "gotham")]
 pub mod gotham {
     use crate::{As, DisplayAs, Format};
-    impl<'a, F: Format, T: 'a + DisplayAs<F>> gotham::handler::IntoResponse for As<'a, F, T> {
-        fn into_response(self, state: &gotham::state::State) -> http::Response<hyper::Body> {
+	use gotham::{hyper::{Body, Response, StatusCode}, handler::IntoResponse, state::State};
+	
+    impl<'a, F: Format, T: 'a + DisplayAs<F>> IntoResponse for As<'a, F, T> {
+        fn into_response(self, state: &State) -> Response<Body> {
             let s = format!("{}", self);
-            (http::StatusCode::OK, F::mime(), s).into_response(state)
+            (StatusCode::OK, F::mime(), s).into_response(state)
         }
     }
 }
