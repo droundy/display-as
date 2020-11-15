@@ -1,6 +1,6 @@
 [package]
 name = "display-as"
-version = "0.5.1"
+version = "0.5.2"
 authors = ["David Roundy <roundyd@physics.oregonstate.edu>"]
 description = "Compile-time templates for displaying data in different markup formats."
 repository = "https://github.com/droundy/display-as"
