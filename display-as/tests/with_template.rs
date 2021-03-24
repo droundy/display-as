@@ -150,14 +150,14 @@ fn from_file_base() {
         &format_as!(HTML, (FromFileBase {
             name: "David".to_string(),
             age: 45
-        })),
+        })).into_string(),
         "FromFile: grown-up url/David who is 45 years old (THE END)\n\n"
     );
     assert_eq!(
         &format_as!(HTML, (FromFileBase {
             name: "Miri".to_string(),
             age: 2
-        })),
+        })).into_string(),
         "FromFile: minor url/Miri (THE END)\n\n"
     );
 }

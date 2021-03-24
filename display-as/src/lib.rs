@@ -1,52 +1,52 @@
 #![deny(missing_docs)]
-//! This template crate uses and defines a [DisplayAs] trait, which
+//! This template crate uses and defines a [`DisplayAs`] trait, which
 //! allows a type to be displayed in a particular format.
 //!
 //! # Overview
 //!
 //! This crate defines three things that you need be aware of in order
-//! to use it: the [Format] trait, which defines a markup language or
-//! other format, the [DisplayAs] trait which is implemented for any
-//! type that can be converted into some [Format], and finally the
+//! to use it: the [`Format`] trait, which defines a markup language or
+//! other format, the [`DisplayAs`] trait which is implemented for any
+//! type that can be converted into some [`Format`], and finally the
 //! template language and macros which allow you to conveniently
-//! implement [DisplayAs] for your own types.  I will describe each of
+//! implement [`DisplayAs`] for your own types.  I will describe each of
 //! these concepts in order.  (**FIXME** I should also have a
 //! quick-start...)
 //!
-//! ## [Format]
+//! ## [`Format`]
 //!
 //! There are a number of predefined Formats (and I can easily add
 //! more if there are user requests), so the focus here will be on
 //! using these Formats, rather than on defining your own (which also
 //! isn't too hard).  A format is a zero-size type that has a rule for
 //! escaping strings and an associated MIME type.  The builtin formats
-//! include [HTML], [LaTeX], and [Math] (which is math-mode LaTeX).
+//! include [`HTML`], [`LaTeX`], and [`Math`] (which is math-mode LaTeX).
 //!
-//! ## [DisplayAs]`<F>`
+//! ## [`DisplayAs`]`<F>`
 //!
-//! The `[DisplayAs]<F: Format>` trait is entirely analogous to the [Display](std::fmt::Display) trait
+//! The `[`DisplayAs`]<F: Format>` trait is entirely analogous to the [Display](std::fmt::Display) trait
 //! in the standard library, except that it is parametrized by a
-//! [Format] so you can have different representations for the same
+//! [`Format`] so you can have different representations for the same
 //! type in different formats.  This also makes it harder to
 //! accidentally include the wrong representation in your output.
 //!
-//! Most of the primitive types already have [DisplayAs] implemented
+//! Most of the primitive types already have [`DisplayAs`] implemented
 //! for the included Formats.  If you encounter a type that you wish
-//! had [DisplayAs] implemented for a given format, just let me know.
-//! You can manually implement [DisplayAs] for any of your own types
+//! had [`DisplayAs`] implemented for a given format, just let me know.
+//! You can manually implement [`DisplayAs`] for any of your own types
 //! (it's not worse than implementing [Display](std::fmt::Display)) but that isn't how
 //! you are intended to do things (except perhaps in very simple
 //! cases, like a wrapper around an integer).  Instead you will want
-//! to use a template to implement [DisplayAs] for your own types.
+//! to use a template to implement [`DisplayAs`] for your own types.
 //!
 //! ## Templates!
 //!
 //! There are two template macros that you can use.  If you just want
-//! to get a string out of one or more [DisplayAs] objects, you will
-//! use something like `format_as!(HTML, "hello world" value)`.  If
-//! you want to implement [DisplayAs], you will use the attribute
-//! [with_template!].  In these examples I will use
-//! [format_as!] because that makes it easy to write testable
+//! to get a string out of one or more [`DisplayAs`] objects, you will
+//! use something like `format_as!(HTML, "hello world" value).into_string()`.  If
+//! you want to implement [`DisplayAs`], you will use the attribute
+//! [`with_template!`].  In these examples I will use
+//! [`format_as!`] because that makes it easy to write testable
 //! documentation.  But in practice you will most likely primarily use
 //! the [with_template] attribute.
 //!
@@ -57,22 +57,22 @@
 //!
 //! ```
 //! use display_as::{HTML, format_as};
-//! assert_eq!(&format_as!(HTML, "Treat this literally <" ),
+//! assert_eq!(&format_as!(HTML, "Treat this literally <" ).into_string(),
 //!            "Treat this literally <");
 //! ```
 //!
 //! ### Expressions
 //!
-//! String literals are essential to representing some other [Format].
+//! String literals are essential to representing some other [`Format`].
 //! To include your data in the output, you can include any expression
-//! that yields a type with [DisplayAs]`<F>` where `F` is your [Format].
+//! that yields a type with [`DisplayAs`]`<F>` where `F` is your [`Format`].
 //! Each expression is delimited by string literals (or the other
 //! options below).  Note that since an expression is
 //!
 //! ```
 //! use display_as::{HTML, format_as};
 //! let s = "This is not a literal: <";
-//! assert_eq!(&format_as!(HTML, s ),
+//! assert_eq!(&format_as!(HTML, s ).into_string(),
 //!            "This is not a literal: &lt;");
 //! ```
 //!
@@ -88,7 +88,7 @@
 //!                        for i in 1..4 {
 //!                            "Counting " i "...\n"
 //!                        }
-//!                        "Blast off!"),
+//!                        "Blast off!").into_string(),
 //!            "Counting 1...\nCounting 2...\nCounting 3...\nBlast off!");
 //! ```
 //!
@@ -100,7 +100,7 @@
 //! ```
 //! use display_as::{HTML, format_as};
 //! assert_eq!(&format_as!(HTML, "I am counting " let count = 5;
-//!                              count " and again " count ),
+//!                              count " and again " count ).into_string(),
 //!            "I am counting 5 and again 5");
 //! ```
 //!
@@ -112,7 +112,7 @@
 //!
 //! ```
 //! use display_as::{HTML, Math, format_as};
-//! assert_eq!(&format_as!(HTML, "The number $" 1.2e12 as Math "$"),
+//! assert_eq!(&format_as!(HTML, "The number $" 1.2e12 as Math "$").into_string(),
 //!            r"The number $1.2\times10^{12}$");
 //! ```
 //!
@@ -129,7 +129,7 @@
 //! assert_eq!(&format_as!(HTML,
 //!                        let x = 1;
 //!                        let announce = { "number " x };
-//!                        "The " announce " is silly " announce),
+//!                        "The " announce " is silly " announce).into_string(),
 //!            "The number 1 is silly number 1");
 //! ```
 //!
@@ -200,7 +200,7 @@
 //!       coursenumber: 365,
 //!       students: vec![Student {name: "David"}, Student {name: "Joel"}],
 //! };
-//! assert_eq!(&format_as!(HTML, myclass), r#"<title>PH365: Templates</title>
+//! assert_eq!(&format_as!(HTML, myclass).into_string(), r#"<title>PH365: Templates</title>
 //! <html>
 //!   <ul><li><span class="student">Name: David</span>
 //!
@@ -217,15 +217,20 @@ extern crate display_as_proc_macro;
 extern crate mime;
 extern crate proc_macro_hack;
 
-/// Use the given template to create a string.
+/// Use the given template to create a [`FormattedString`].
 ///
-/// You can think of this as being kind of like `format!` on strange drugs.
+/// You can think of this as being kind of like [`format!`] on strange drugs.
+/// We return a [`FormattedString`] instaed of a [String] so that
+/// You can store the output and use it later in another template without
+/// having the contents escaped.
+///
+/// To obtain a [`String`], use the [`FormattedString::into_string`] method.
 #[proc_macro_hack]
 pub use display_as_proc_macro::format_as;
 
 /// Write the given template to a file.
 ///
-/// You can think of this as being kind of like `write!` on strange drugs.
+/// You can think of this as being kind of like [`write!`] on strange drugs.
 #[proc_macro_hack]
 pub use display_as_proc_macro::write_as;
 use proc_macro_hack::proc_macro_hack;
@@ -246,14 +251,14 @@ mod utf8;
 pub mod float;
 
 pub use crate::html::HTML;
-pub use crate::url::URL;
 pub use crate::latex::LaTeX;
 pub use crate::mathlatex::Math;
 pub use crate::rust::Rust;
+pub use crate::url::URL;
 pub use crate::utf8::UTF8;
 
 /// Format is a format that we can use for displaying data.
-pub trait Format: Sync+Send {
+pub trait Format: Sync + Send {
     /// "Escape" the given string so it can be safely displayed in
     /// this format.  The precise meaning of this may vary from format
     /// to format, but the general sense is that this string does not
@@ -262,12 +267,12 @@ pub trait Format: Sync+Send {
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error>;
     /// The mime type of this format.
     fn mime() -> mime::Mime;
-    /// Return an actual [Format] for use in [As] below.
+    /// Return an actual [`Format`] for use in [`As`] below.
     fn this_format() -> Self;
 }
 
 /// This trait is analogous to [Display](std::fmt::Display), but will display the data in
-/// `F` [Format].
+/// `F` [`Format`].
 pub trait DisplayAs<F: Format> {
     /// Formats the value using the given formatter.
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error>;
@@ -295,13 +300,13 @@ struct Closure<F: Format, C: Fn(&mut Formatter) -> Result<(), Error>> {
 /// Display the given closure as this format.
 ///
 /// This is used internally in template handling.
-pub fn display_closure_as<F: Format>(f: F, c: impl Fn(&mut Formatter) -> Result<(), Error>) -> impl DisplayAs<F> {
-    Closure {
-        f: c,
-        _format: f,
-    }
+pub fn display_closure_as<F: Format>(
+    f: F,
+    c: impl Fn(&mut Formatter) -> Result<(), Error>,
+) -> impl DisplayAs<F> {
+    Closure { f: c, _format: f }
 }
-impl<F: Format, C: Fn(&mut Formatter) -> Result<(), Error>> DisplayAs<F> for Closure<F,C> {
+impl<F: Format, C: Fn(&mut Formatter) -> Result<(), Error>> DisplayAs<F> for Closure<F, C> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         (self.f)(f)
     }
@@ -313,10 +318,13 @@ fn test_closure() {
         __f.write_str("hello world")?;
         Ok(())
     };
-    assert_eq!("hello world", &format_as!(HTML, display_closure_as(HTML, x)));
+    assert_eq!(
+        "hello world",
+        &format_as!(HTML, display_closure_as(HTML, x)).into_string()
+    );
 }
 
-/// Choose to [Display](std::fmt::Display) this type using a particular [Format] `F`.
+/// Choose to [Display](std::fmt::Display) this type using a particular [`Format`] `F`.
 pub struct As<'a, F: Format, T: DisplayAs<F> + ?Sized> {
     inner: &'a T,
     _format: F,
@@ -351,7 +359,7 @@ pub mod rouille {
     }
 }
 
-/// The `actix-web` feature flag makes any [As] type a
+/// The `actix-web` feature flag makes any [`As`] type a
 /// [actix_web::Responder].
 #[cfg(feature = "actix-web")]
 pub mod actix {
@@ -372,13 +380,17 @@ pub mod actix {
     }
 }
 
-/// The `gotham-web` feature flag makes any [As] type a
+/// The `gotham-web` feature flag makes any [`As`] type a
 /// [::gotham::handler::IntoResponse].
 #[cfg(feature = "gotham")]
 pub mod gotham {
     use crate::{As, DisplayAs, Format};
-	use gotham::{hyper::{Body, Response, StatusCode}, handler::IntoResponse, state::State};
-	
+    use gotham::{
+        handler::IntoResponse,
+        hyper::{Body, Response, StatusCode},
+        state::State,
+    };
+
     impl<'a, F: Format, T: 'a + DisplayAs<F>> IntoResponse for As<'a, F, T> {
         fn into_response(self, state: &State) -> Response<Body> {
             let s = format!("{}", self);
@@ -387,11 +399,11 @@ pub mod gotham {
     }
 }
 
-/// The `usewarp` feature flag makes any [DisplayAs] type a [warp::Reply].
+/// The `usewarp` feature flag makes any [`DisplayAs`] type a [warp::Reply].
 #[cfg(feature = "usewarp")]
 pub mod warp {
-    use crate::{DisplayAs, Format, As};
-    impl<'a, F: Format, T: DisplayAs<F>+Sync> warp::Reply for As<'a, F, T> {
+    use crate::{As, DisplayAs, Format};
+    impl<'a, F: Format, T: DisplayAs<F> + Sync> warp::Reply for As<'a, F, T> {
         /// Convert into a [warp::Reply].
         fn into_response(self) -> warp::reply::Response {
             let s = format!("{}", self);
@@ -399,13 +411,15 @@ pub mod warp {
             http::Response::builder()
                 .header("Content-type", m.as_bytes())
                 .status(http::StatusCode::OK)
-                .body(s).unwrap().map(hyper::Body::from)
+                .body(s)
+                .unwrap()
+                .map(hyper::Body::from)
         }
     }
 
     #[test]
     fn test_warp() {
-        use crate::{HTML, display};
+        use crate::{display, HTML};
         use warp::Reply;
         // This sloppy test just verify that the code runs.
         display(HTML, &"hello world".to_string()).into_response();
@@ -435,17 +449,49 @@ impl<'a, F: Format> DisplayAs<F> for &'a str {
 
 #[cfg(test)]
 mod tests {
-    use super::{HTML};
+    use super::HTML;
     #[test]
     fn html_escaping() {
-        assert_eq!(&format_as!(HTML, ("&")), "&amp;");
+        assert_eq!(&format_as!(HTML, ("&")).into_string(), "&amp;");
         assert_eq!(
-            &format_as!(HTML, ("hello &>this is cool")),
+            &format_as!(HTML, ("hello &>this is cool")).into_string(),
             "hello &amp;&gt;this is cool"
         );
         assert_eq!(
-            &format_as!(HTML, ("hello &>this is 'cool")),
+            &format_as!(HTML, ("hello &>this is 'cool")).into_string(),
             "hello &amp;&gt;this is &#x27;cool"
         );
+    }
+}
+
+/// A `String` that is formatted in `F`
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct FormattedString<F> {
+    inner: String,
+    _format: F,
+}
+
+impl<F: Format> FormattedString<F> {
+    /// Create a new `FormattedString` from an already-formatted `String`.
+    pub fn from_formatted<S: Into<String>>(s: S) -> Self {
+        FormattedString {
+            inner: s.into(),
+            _format: F::this_format(),
+        }
+    }
+    /// Convert back into a string
+    pub fn into_string(self) -> String {
+        self.inner
+    }
+}
+
+impl<F: Format> DisplayAs<F> for FormattedString<F> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        f.write_str(&self.inner)
+    }
+}
+impl<F: Format> std::fmt::Debug for FormattedString<F> {
+   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+       write!(f, "{:?}", self.inner)
     }
 }

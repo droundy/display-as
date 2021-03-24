@@ -41,20 +41,20 @@ display_floats_as!(Math, r"\times10^{", "}", 3, Some("10^{"));
 
 #[test]
 fn escaping() {
-    assert_eq!(&format_as!(Math, ("&")), r"\&");
+    assert_eq!(&format_as!(Math, ("&")).into_string(), r"\&");
     assert_eq!(
-        &format_as!(Math, ("hello &>this is cool")),
+        &format_as!(Math, ("hello &>this is cool")).into_string(),
         r"hello \&>this is cool"
     );
     assert_eq!(
-        &format_as!(Math, ("hello &>this is 'cool")),
+        &format_as!(Math, ("hello &>this is 'cool")).into_string(),
         r"hello \&>this is 'cool"
     );
 }
 #[test]
 fn floats() {
-    assert_eq!(&format_as!(Math, 3.0), "3");
-    assert_eq!(&format_as!(Math, 3e5), r"3\times10^{5}");
-    assert_eq!(&format_as!(Math, 1e5), r"10^{5}");
-    assert_eq!(&format_as!(Math, 3e4), "30000");
+    assert_eq!(&format_as!(Math, 3.0).into_string(), "3");
+    assert_eq!(&format_as!(Math, 3e5).into_string(), r"3\times10^{5}");
+    assert_eq!(&format_as!(Math, 1e5).into_string(), r"10^{5}");
+    assert_eq!(&format_as!(Math, 3e4).into_string(), "30000");
 }

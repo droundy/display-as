@@ -9,7 +9,7 @@ fn test_if_let() {
     assert_eq!(
         format_as!(HTML, if let Foo { x } = foo {
             x
-        }),
+        }).into_string(),
         r"37"
     );
 }
@@ -22,7 +22,7 @@ fn test_let_with_braces_match() {
         format_as!(HTML, {
             let Foo { x } = foo;
             x
-        }),
+        }).into_string(),
         r"37"
     );
 }

@@ -11,7 +11,7 @@ fn test_let() {
             "counting " i " "
         }
     };
-    foo),
+    foo).into_string(),
         r"counting hello counting world "
     );
 }
@@ -24,7 +24,7 @@ fn test_loop_no_let() {
             for i in [1u8, 2].iter() {
                 "counting " * i
             }
-        ),
+        ).into_string(),
         r"counting 1counting 2"
     );
 }
@@ -36,12 +36,12 @@ fn test_loop_no_let_b() {
         for i in [1u8,2].iter() {
             let j: u8 = *i;
             "counting " j
-        }),
+        }).into_string(),
         r"counting 1counting 2"
     );
 }
 
 #[test]
 fn test_no_loop_no_let_c() {
-    assert_eq!(&format_as!(HTML, let i = 1u8; i), r"1");
+    assert_eq!(&format_as!(HTML, let i = 1u8; i).into_string(), r"1");
 }

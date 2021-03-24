@@ -9,7 +9,7 @@ fn test_match() {
         format_as!(HTML, match someone {
             Some(x) => { x }
             None => { "None!" }
-        }),
+        }).into_string(),
         r"1"
     );
 
@@ -18,7 +18,7 @@ fn test_match() {
         format_as!(HTML, match someone {
             Some(x) => { x }
             None => { "None!" }
-        }),
+        }).into_string(),
         r"None!"
     );
 }

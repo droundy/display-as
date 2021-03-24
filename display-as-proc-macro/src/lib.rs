@@ -101,7 +101,7 @@ pub fn format_as(input: TokenStream) -> TokenStream {
                 #statements
                 Ok(__f)
             };
-            doit().expect("trouble writing to String??!")
+            $crate::FormattedString::<#format>::from_formatted(doit().expect("trouble writing to String??!"))
         }
     )
     .into()

@@ -38,7 +38,7 @@ fn write_nice_loop() {
 fn write_nice_loop_strings() {
     let data = ["hello".to_string(), "world".to_string()];
     let mut s = String::new();
-    write_as!(HTML, s, for d in data.into_iter() {
+    write_as!(HTML, s, for d in data.iter() {
         " " d
     })
     .unwrap();

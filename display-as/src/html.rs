@@ -87,11 +87,11 @@ display_integers_as!(HTML);
 /// }
 /// display_as::display_floats_as!(HTML, "×10<sup>", "</sup>", 3, Some("10<sup>"));
 /// fn main() {
-///   assert_eq!(&format_as!(HTML, 1e3), "1000");
-///   assert_eq!(&format_as!(HTML, 3e4), "30000");
-///   assert_eq!(&format_as!(HTML, 1e5), "10<sup>5</sup>");
-///   assert_eq!(&format_as!(HTML, 2e5), "2×10<sup>5</sup>");
-///   assert_eq!(&format_as!(HTML, 1e6), "10<sup>6</sup>");
+///   assert_eq!(&format_as!(HTML, 1e3).into_string(), "1000");
+///   assert_eq!(&format_as!(HTML, 3e4).into_string(), "30000");
+///   assert_eq!(&format_as!(HTML, 1e5).into_string(), "10<sup>5</sup>");
+///   assert_eq!(&format_as!(HTML, 2e5).into_string(), "2×10<sup>5</sup>");
+///   assert_eq!(&format_as!(HTML, 1e6).into_string(), "10<sup>6</sup>");
 /// }
 /// ```
 #[macro_export]
@@ -113,20 +113,20 @@ display_floats_as!(HTML, "×10<sup>", "</sup>", 3, Some("10<sup>"));
 
 #[test]
 fn escaping() {
-    assert_eq!(&format_as!(HTML, ("&")), "&amp;");
+    assert_eq!(&format_as!(HTML, ("&")).into_string(), "&amp;");
     assert_eq!(
-        &format_as!(HTML, ("hello &>this is cool")),
+        &format_as!(HTML, ("hello &>this is cool")).into_string(),
         "hello &amp;&gt;this is cool"
     );
     assert_eq!(
-        &format_as!(HTML, ("hello &>this is 'cool")),
+        &format_as!(HTML, ("hello &>this is 'cool")).into_string(),
         "hello &amp;&gt;this is &#x27;cool"
     );
 }
 #[test]
 fn floats() {
-    assert_eq!(&format_as!(HTML, 3.0), "3");
-    assert_eq!(&format_as!(HTML, 3e5), "3×10<sup>5</sup>");
-    assert_eq!(&format_as!(HTML, 1e-6), "10<sup>-6</sup>");
-    assert_eq!(&format_as!(HTML, 3e4), "30000");
+    assert_eq!(&format_as!(HTML, 3.0).into_string(), "3");
+    assert_eq!(&format_as!(HTML, 3e5).into_string(), "3×10<sup>5</sup>");
+    assert_eq!(&format_as!(HTML, 1e-6).into_string(), "10<sup>-6</sup>");
+    assert_eq!(&format_as!(HTML, 3e4).into_string(), "30000");
 }
