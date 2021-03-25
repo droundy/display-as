@@ -255,7 +255,7 @@ pub use crate::url::URL;
 pub use crate::utf8::UTF8;
 
 /// Format is a format that we can use for displaying data.
-pub trait Format: Sync + Send {
+pub trait Format: Sync + Send + Copy {
     /// "Escape" the given string so it can be safely displayed in
     /// this format.  The precise meaning of this may vary from format
     /// to format, but the general sense is that this string does not
@@ -462,7 +462,7 @@ mod tests {
 }
 
 /// A `String` that is formatted in `F`
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub struct FormattedString<F> {
     inner: String,
     _format: F,
@@ -479,6 +479,10 @@ impl<F: Format> FormattedString<F> {
     /// Convert back into a string
     pub fn into_string(self) -> String {
         self.inner
+    }
+    /// Reference a `&str` from this
+    pub fn as_str(&self) -> &str {
+        &self.inner
     }
 }
 

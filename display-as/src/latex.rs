@@ -3,6 +3,7 @@
 use super::*;
 
 /// Format as LaTeX.
+#[derive(Clone, Copy)]
 pub struct LaTeX;
 impl Format for LaTeX {
     fn mime() -> mime::Mime {

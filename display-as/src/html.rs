@@ -3,6 +3,7 @@
 use super::*;
 
 /// [Format] as HTML.
+#[derive(Clone, Copy)]
 pub struct HTML;
 impl Format for HTML {
     fn escape(f: &mut Formatter, mut s: &str) -> Result<(), Error> {
