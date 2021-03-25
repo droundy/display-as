@@ -77,6 +77,7 @@ display_integers_as!(HTML);
 /// However, I think some examples for HTML will most easily define
 /// the other arguments.
 /// ```
+/// #[derive(Copy, Clone)]
 /// struct HTML;
 /// use display_as::{Format, format_as};
 /// impl Format for HTML {
