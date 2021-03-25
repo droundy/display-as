@@ -1,7 +1,7 @@
 # DisplayAs
 
 [![Documentation](https://docs.rs/display-as/badge.svg)](https://docs.rs/display-as)
-[![Build Status](https://github.com/droundy/display-as/actions)](https://github.com/droundy/display_as/actions/workflows/test.yml/badge.svg)
+[![Build Status](https://github.com/droundy/display-as/actions)](https://github.com/droundy/display-as/actions/workflows/test.yml/badge.svg)
 
 These crates creates rusty templates that are evaluated at
 compile-time (much like [askama](https://docs.rs/askama)).
