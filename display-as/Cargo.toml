@@ -24,7 +24,6 @@ all-features = true
 [dependencies]
 
 display-as-proc-macro = { version = "0.6.0", path = "../display-as-proc-macro" }
-proc-macro-hack = "0.5"
 
 mime = "0.3.12"
 percent-encoding = "1.0.1"

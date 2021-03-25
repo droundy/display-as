@@ -1,5 +1,3 @@
-extern crate display_as;
-
 use display_as::{write_as, HTML};
 
 #[test]

@@ -1,7 +1,6 @@
 //! This is the implementation crate for `display-as-template`.
 
 extern crate proc_macro;
-extern crate proc_macro_hack;
 // extern crate syn;
 #[macro_use]
 extern crate quote;
@@ -9,7 +8,6 @@ extern crate glob;
 extern crate proc_macro2;
 
 use proc_macro::{Delimiter, Group, TokenStream, TokenTree};
-use proc_macro_hack::proc_macro_hack;
 use std::fmt::Write;
 use std::fs::File;
 use std::io::Read;
@@ -67,7 +65,7 @@ fn count_pounds(x: &str) -> &'static str {
 /// Use the given template to create a string.
 ///
 /// You can think of this as being kind of like `format!` on strange drugs.
-#[proc_macro_hack]
+#[proc_macro]
 pub fn format_as(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
     let format = if let Some(format) = tokens.next() {
@@ -95,13 +93,13 @@ pub fn format_as(input: TokenStream) -> TokenStream {
     quote!(
         {
             use std::fmt::Write;
-            use $crate::DisplayAs;
+            use display_as::DisplayAs;
             let doit = || -> Result<String, std::fmt::Error> {
                 let mut __f = String::with_capacity(32);
                 #statements
                 Ok(__f)
             };
-            $crate::FormattedString::<#format>::from_formatted(doit().expect("trouble writing to String??!"))
+            display_as::FormattedString::<#format>::from_formatted(doit().expect("trouble writing to String??!"))
         }
     )
     .into()
@@ -110,7 +108,7 @@ pub fn format_as(input: TokenStream) -> TokenStream {
 /// Write the given template to a file.
 ///
 /// You can think of this as being kind of like `write!` on strange drugs.
-#[proc_macro_hack]
+#[proc_macro]
 pub fn write_as(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
     let format = if let Some(format) = tokens.next() {
@@ -151,7 +149,7 @@ pub fn write_as(input: TokenStream) -> TokenStream {
     quote!(
         {
             use std::fmt::Write;
-            use $crate::DisplayAs;
+            use display_as::DisplayAs;
             let __f = &mut #writer;
             let mut doit = || -> Result<(), std::fmt::Error> {
                 #statements
@@ -477,7 +475,7 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     new_impl
 }
 
-/// Like [with_template], but also generate any web responder
+/// Like [macro@with_template], but also generate any web responder
 /// implementations that are handled via feature flags.
 #[proc_macro_attribute]
 pub fn with_response_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {

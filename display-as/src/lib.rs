@@ -215,7 +215,7 @@
 
 extern crate display_as_proc_macro;
 extern crate mime;
-extern crate proc_macro_hack;
+extern crate self as display_as;
 
 /// Use the given template to create a [`FormattedString`].
 ///
@@ -225,15 +225,12 @@ extern crate proc_macro_hack;
 /// having the contents escaped.
 ///
 /// To obtain a [`String`], use the [`FormattedString::into_string`] method.
-#[proc_macro_hack]
 pub use display_as_proc_macro::format_as;
 
 /// Write the given template to a file.
 ///
 /// You can think of this as being kind of like [`write!`] on strange drugs.
-#[proc_macro_hack]
 pub use display_as_proc_macro::write_as;
-use proc_macro_hack::proc_macro_hack;
 
 /// Can I write doc here?
 pub use display_as_proc_macro::with_template;
@@ -449,7 +446,7 @@ impl<'a, F: Format> DisplayAs<F> for &'a str {
 
 #[cfg(test)]
 mod tests {
-    use super::HTML;
+    use super::{format_as, HTML};
     #[test]
     fn html_escaping() {
         assert_eq!(&format_as!(HTML, ("&")).into_string(), "&amp;");
@@ -491,7 +488,7 @@ impl<F: Format> DisplayAs<F> for FormattedString<F> {
     }
 }
 impl<F: Format> std::fmt::Debug for FormattedString<F> {
-   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-       write!(f, "{:?}", self.inner)
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.inner)
     }
 }
