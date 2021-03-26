@@ -308,7 +308,16 @@ impl<F: Format, C: Fn(&mut Formatter) -> Result<(), Error>> DisplayAs<F> for Clo
         (self.f)(f)
     }
 }
-
+impl<F> PartialEq<FormattedString<F>> for str {
+    fn eq(&self, other: &FormattedString<F>) -> bool {
+        self == &other.inner
+    }
+}
+impl<F> PartialEq<str> for FormattedString<F> {
+    fn eq(&self, other: &str) -> bool {
+        &self.inner == other
+    }
+}
 #[test]
 fn test_closure() {
     let x = |__f: &mut Formatter| -> Result<(), Error> {
@@ -317,7 +326,11 @@ fn test_closure() {
     };
     assert_eq!(
         "hello world",
-        &format_as!(HTML, display_closure_as(HTML, x)).into_string()
+        &format_as!(HTML, display_closure_as(HTML, x))
+    );
+    assert_eq!(
+        &format_as!(HTML, display_closure_as(HTML, x)),
+        "hello world"
     );
 }
 
