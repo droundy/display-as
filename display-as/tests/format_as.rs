@@ -119,3 +119,11 @@ fn test_let_again() {
         r"I am counting Foo 1 counting Foo 2 and I am done!"
     );
 }
+
+#[test]
+fn nested_format_as() {
+    struct Foo(isize);
+    #[with_template("Foo " self.0)]
+    impl DisplayAs<HTML> for Foo {}
+    format_as!(HTML, "testing" format_as!(HTML, "hello" Foo(2)) " and " Foo(1));
+}

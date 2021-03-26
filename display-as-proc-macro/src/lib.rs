@@ -166,6 +166,28 @@ fn expr_toks_to_stmt(
     expr: &mut Vec<TokenTree>,
 ) -> impl Iterator<Item = TokenTree> {
     let len = expr.len();
+
+    let to_display_as = {
+        // We generate a unique method name to avoid a bug that happens if
+        // there are nested calls to format_as!.  The ToDisplayAs type below
+        // is my hokey approach to use deref coersion (which happens on method
+        // calls) ensure that either references to DisplayAs types or the types
+        // themselves can be used.
+        use rand::distributions::Alphanumeric;
+        use rand::{thread_rng, Rng};
+        use std::iter;
+
+        let mut rng = thread_rng();
+        let rand_chars: String = iter::repeat(())
+            .map(|()| rng.sample(Alphanumeric))
+            .map(char::from)
+            .take(13)
+            .collect();
+        proc_macro2::Ident::new(
+            &format!("ToDisplayAs{}xxx{}", format, rand_chars),
+            proc_macro2::Span::call_site(),
+        )
+    };
     if len > 2 && expr[len - 2].to_string() == "as" {
         let format = proc_to_two(expr.pop().unwrap().into());
         expr.pop();
@@ -173,12 +195,12 @@ fn expr_toks_to_stmt(
         two_to_proc(quote! {
             {
                 trait ToDisplayAs {
-                    fn to_display_as(&self) -> &Self;
+                    fn #to_display_as(&self) -> &Self;
                 }
                 impl<T: DisplayAs<#format>> ToDisplayAs for T {
-                    fn to_display_as(&self) -> &Self { self }
+                    fn #to_display_as(&self) -> &Self { self }
                 }
-                __f.write_fmt(format_args!("{}", <_ as DisplayAs<#format>>::display((#expr).to_display_as())))?;
+                __f.write_fmt(format_args!("{}", <_ as DisplayAs<#format>>::display((#expr).#to_display_as())))?;
             }
         })
         .into_iter()
@@ -188,12 +210,12 @@ fn expr_toks_to_stmt(
         two_to_proc(quote! {
             {
                 trait ToDisplayAs {
-                    fn to_display_as(&self) -> &Self;
+                    fn #to_display_as(&self) -> &Self;
                 }
                 impl<T: DisplayAs<#format>> ToDisplayAs for T {
-                    fn to_display_as(&self) -> &Self { self }
+                    fn #to_display_as(&self) -> &Self { self }
                 }
-                __f.write_fmt(format_args!("{}", <_ as DisplayAs<#format>>::display((#expr).to_display_as())))?;
+                __f.write_fmt(format_args!("{}", <_ as DisplayAs<#format>>::display((#expr).#to_display_as())))?;
             }
         })
         .into_iter()
