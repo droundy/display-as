@@ -3,7 +3,7 @@
 use super::*;
 
 /// [Format] as HTML.
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct HTML;
 impl Format for HTML {
     fn escape(f: &mut Formatter, mut s: &str) -> Result<(), Error> {
@@ -77,7 +77,7 @@ display_integers_as!(HTML);
 /// However, I think some examples for HTML will most easily define
 /// the other arguments.
 /// ```
-/// #[derive(Copy, Clone)]
+/// #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 /// struct HTML;
 /// use display_as::{Format, format_as};
 /// impl Format for HTML {

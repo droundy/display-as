@@ -3,7 +3,7 @@
 use super::*;
 
 /// Format as Rust.
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Rust;
 impl Format for Rust {
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {

@@ -255,7 +255,7 @@ pub use crate::url::URL;
 pub use crate::utf8::UTF8;
 
 /// Format is a format that we can use for displaying data.
-pub trait Format: Sync + Send + Copy {
+pub trait Format: Sync + Send + Copy + Eq + Ord + std::hash::Hash {
     /// "Escape" the given string so it can be safely displayed in
     /// this format.  The precise meaning of this may vary from format
     /// to format, but the general sense is that this string does not

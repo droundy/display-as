@@ -5,7 +5,7 @@ use super::*;
 /// Format as raw UTF8.
 ///
 /// This is one way to output a raw string.
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct UTF8;
 impl Format for UTF8 {
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {

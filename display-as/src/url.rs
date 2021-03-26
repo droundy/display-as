@@ -4,7 +4,7 @@ use super::*;
 use percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET};
 
 /// [Format] as URL.
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct URL;
 impl Format for URL {
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {
