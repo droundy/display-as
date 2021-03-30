@@ -11,9 +11,9 @@ compile-time (much like [askama](https://docs.rs/askama)).
 ## Comparison with other template engines in rust
 
 Given there are numerous existing template engines, you might ask what
-distinguishes `display-as-template` from these other engines?
+distinguishes `display-as` from these other engines?
 
-1. The most notable distinction is that `display-as-template`
+1. The most notable distinction is that `display-as`
    compiles the templates at compile time, like
    [askama](https://docs.rs/askama) and
    [ructe](https://crates.io/crates/ructe) but unlike most other
@@ -25,14 +25,14 @@ distinguishes `display-as-template` from these other engines?
    to support this.  I believe that it is nicer and easier not to
    learn a new language for the expressiosn within templates.
 
-3. `DisplayAs` and `display-as-template` support embedding one format
+3. `DisplayAs` and `display-as` support embedding one format
    into another, so that you can mix languages.  This is most common
    in HTML, which supports numerous formats such as javascript or CSS,
-   but also to allows math mode within either LaTeX or in HTML using
+   but also math mode within either LaTeX or even in HTML using
    MathJax.  This has been discussed as a
    [possible feature in ructe](https://github.com/kaj/ructe/issues/1).
 
-4. Using `display-as-template` is typesafe on the output side as well
+4. Using `display-as` is typesafe on the output side as well
    as the input side.  You can't accidentally include javascript
    formatted text into HTML, or
    [double-escape HTML strings](https://github.com/djc/askama/issues/108).
