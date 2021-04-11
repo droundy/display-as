@@ -474,8 +474,16 @@ mod tests {
     }
 }
 
+#[cfg(feature = "serde1")]
+use serde::{Serialize, Deserialize};
+
 /// A `String` that is formatted in `F`
+///
+/// The `serde1`` feature flag enables a [`FormattedString`] to be
+/// serialized and deserialized by [serde].
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", serde(transparent))]
 pub struct FormattedString<F> {
     inner: String,
     _format: F,
