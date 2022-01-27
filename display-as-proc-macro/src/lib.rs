@@ -440,12 +440,13 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
         }
     }
     let last = impl_toks.pop().unwrap();
-    if last.to_string() != "{  }" && last.to_string() != "{ }" {
-        panic!(
+    match last.to_string().as_ref() {
+        "{  }" | "{ }" | "{}" => (), // this is what we expect.
+        s => panic!(
             "with_template must be applied to an impl that ends in '{{}}', not {}",
-            last.to_string()
-        );
-    }
+            s
+        ),
+    };
     let my_format = my_format; // no longer mut
 
     let input_vec: Vec<_> = input.clone().into_iter().collect();
