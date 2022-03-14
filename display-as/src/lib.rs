@@ -160,7 +160,6 @@
 //! editors will hopefully be able to do the "right thing" for the
 //! template format (e.g. HTML in this case).
 
-#![cfg_attr(feature = "docinclude", feature(external_doc))]
 //! ## Using `include!("...")` within a template
 //!
 //! Now I will demonstrate how you can include template files within
@@ -171,17 +170,17 @@
 //! laid out.
 //! #### `base.html`:
 //! ```ignore
-#![cfg_attr(feature = "docinclude", doc(include = "base.html"))]
+#![cfg_attr(feature = "docinclude", doc = include_str!("base.html"))]
 //! ```
 //! We can have a template for how we will display students...
 //! #### `student.html`:
 //! ```ignore
-#![cfg_attr(feature = "docinclude", doc(include = "student.html"))]
+#![cfg_attr(feature = "docinclude", doc = include_str!("student.html"))]
 //!```
 //! Finally, an actual web page describing a class!
 //! #### `class.html`:
 //! ```ignore
-#![cfg_attr(feature = "docinclude", doc(include = "class.html"))]
+#![cfg_attr(feature = "docinclude", doc = include_str!("class.html"))]
 //! ```
 //! Now to put all this together, we'll need some rust code.
 //!
@@ -475,7 +474,7 @@ mod tests {
 }
 
 #[cfg(feature = "serde1")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// A `String` that is formatted in `F`
 ///
@@ -484,8 +483,10 @@ use serde::{Serialize, Deserialize};
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde1", serde(transparent))]
+#[cfg_attr(feature = "serde1", serde(bound(deserialize = "F: Format")))]
 pub struct FormattedString<F> {
     inner: String,
+    #[serde(skip, default = "F::this_format")]
     _format: F,
 }
 
