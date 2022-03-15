@@ -22,7 +22,7 @@ jobs:
         with:
           command: check
           # Older rustc versions don't support passing --features with --all
-          args: --all --features ${{ matrix.rust == 'stable' && 'gotham-web,usewarp,serde' || '' }}
+          args: --all ${{ matrix.rust == 'stable' && '--features gotham-web,usewarp,serde' || '' }}
 
   test:
     name: Test Suite
