@@ -170,17 +170,17 @@
 //! laid out.
 //! #### `base.html`:
 //! ```ignore
-#![cfg_attr(feature = "docinclude", doc = include_str!("base.html"))]
+#![doc = include_str!("base.html")]
 //! ```
 //! We can have a template for how we will display students...
 //! #### `student.html`:
 //! ```ignore
-#![cfg_attr(feature = "docinclude", doc = include_str!("student.html"))]
+#![doc = include_str!("student.html")]
 //!```
 //! Finally, an actual web page describing a class!
 //! #### `class.html`:
 //! ```ignore
-#![cfg_attr(feature = "docinclude", doc = include_str!("class.html"))]
+#![doc = include_str!("class.html")]
 //! ```
 //! Now to put all this together, we'll need some rust code.
 //!

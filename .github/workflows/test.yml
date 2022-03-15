@@ -10,7 +10,7 @@ jobs:
       matrix:
         rust:
           - stable
-          - 1.45.0
+          - 1.54.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -21,8 +21,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
-          # Older rustc versions don't support passing --features with --all
-          args: --all ${{ matrix.rust == 'stable' && '--features gotham-web,usewarp,serde' || '' }}
+          args: --all --all-features
 
   test:
     name: Test Suite
@@ -31,7 +30,7 @@ jobs:
       matrix:
         rust:
           - stable
-          # - 1.45.0
+          # - 1.54.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
