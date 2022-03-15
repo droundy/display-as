@@ -21,7 +21,8 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --all --features display-as/gotham-web,display-as/usewarp,display-as/serde
+          # Older rustc versions don't support passing --features with --all
+          args: --all --features ${{ matrix.rust == "stable" && gotham-web,usewarp,serde || "" }}
 
   test:
     name: Test Suite
