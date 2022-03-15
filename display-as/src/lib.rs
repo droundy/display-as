@@ -486,7 +486,7 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde1", serde(bound(deserialize = "F: Format")))]
 pub struct FormattedString<F> {
     inner: String,
-    #[serde(skip, default = "F::this_format")]
+    #[cfg_attr(feature = "serde1", serde(skip, default = "F::this_format"))]
     _format: F,
 }
 
