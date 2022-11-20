@@ -3,6 +3,7 @@ extern crate display_as;
 use display_as::{format_as, HTML};
 
 #[test]
+#[allow(irrefutable_let_patterns)]
 fn test_if_let() {
     struct Foo { x: usize }
     let foo = Foo { x: 37 };
