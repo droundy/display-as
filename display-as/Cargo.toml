@@ -1,6 +1,6 @@
 [package]
 name = "display-as"
-version = "0.6.2"
+version = "0.7.0"
 authors = ["David Roundy <roundyd@physics.oregonstate.edu>"]
 description = "Compile-time templates for displaying data in different markup formats."
 repository = "https://github.com/droundy/display-as"
@@ -12,7 +12,6 @@ readme = "README.md"
 [features]
 
 gotham-web = ["gotham"]
-usewarp = ["warp", "http", "hyper"]
 serde1 = ["serde"]
 
 [package.metadata.docs.rs]
@@ -28,9 +27,7 @@ percent-encoding = "1.0.1"
 rouille = { version = "2.2.0", optional = true }
 actix-web = { version = "0.7.14", optional = true }
 gotham = { version = "0.5.0", optional = true }
-hyper = { version = "0.13", optional = true }
-http = { version = "0.2.1", optional = true }
-warp = { version = "0.2.4", optional = true }
+warp = { version = "0.3.3", optional = true }
 
 serde = { version = "1.0.125", features = ["derive"], optional = true }
 

@@ -408,8 +408,8 @@ pub mod gotham {
     }
 }
 
-/// The `usewarp` feature flag makes any [`DisplayAs`] type a [warp::Reply].
-#[cfg(feature = "usewarp")]
+/// The `warp` feature flag makes any [`DisplayAs`] type a [warp::Reply].
+#[cfg(feature = "warp")]
 pub mod warp {
     use crate::{As, DisplayAs, Format};
     impl<'a, F: Format, T: DisplayAs<F> + Sync> warp::Reply for As<'a, F, T> {
@@ -417,12 +417,12 @@ pub mod warp {
         fn into_response(self) -> warp::reply::Response {
             let s = format!("{}", self);
             let m = F::mime().as_ref().to_string();
-            http::Response::builder()
+            warp::http::Response::builder()
                 .header("Content-type", m.as_bytes())
-                .status(http::StatusCode::OK)
+                .status(warp::http::StatusCode::OK)
                 .body(s)
                 .unwrap()
-                .map(hyper::Body::from)
+                .map(warp::hyper::Body::from)
         }
     }
 
