@@ -192,3 +192,119 @@ fn display() {
     assert_eq!(&format!("{}", Floating::from(0.0001)), "1e-4");
     assert_eq!(&format!("{}", Floating::from(0.001234)), "0.001234");
 }
+
+#[test]
+fn to_floating_f32() {
+    assert_eq!(
+        Floating::from(1.0f32),
+        Floating::Normal {
+            exponent: 0,
+            mantissa: "1".to_string(),
+            is_negative: false
+        }
+    );
+    assert_eq!(
+        Floating::from(1.2e10f32),
+        Floating::Normal {
+            exponent: 10,
+            mantissa: "12".to_string(),
+            is_negative: false
+        }
+    );
+    assert_eq!(
+        Floating::from(-0.1f32),
+        Floating::Normal {
+            exponent: -1,
+            mantissa: "1".to_string(),
+            is_negative: true
+        }
+    );
+}
+
+#[test]
+fn to_floating_negative_and_abnormal() {
+    assert_eq!(
+        Floating::from(-123.4),
+        Floating::Normal {
+            exponent: 2,
+            mantissa: "1234".to_string(),
+            is_negative: true
+        }
+    );
+    assert_eq!(Floating::from(0.0), Floating::Abnormal("0".to_string()));
+    assert_eq!(Floating::from(-0.0), Floating::Abnormal("-0".to_string()));
+    assert_eq!(Floating::from(f64::NAN), Floating::Abnormal("NaN".to_string()));
+    assert_eq!(
+        Floating::from(f64::INFINITY),
+        Floating::Abnormal("inf".to_string())
+    );
+    assert_eq!(
+        Floating::from(f64::NEG_INFINITY),
+        Floating::Abnormal("-inf".to_string())
+    );
+    assert_eq!(Floating::from(0.0f32), Floating::Abnormal("0".to_string()));
+    assert_eq!(Floating::from(f32::NAN), Floating::Abnormal("NaN".to_string()));
+    assert_eq!(
+        Floating::from(f32::NEG_INFINITY),
+        Floating::Abnormal("-inf".to_string())
+    );
+    // Subnormal numbers are not "normal", and are printed in full.
+    assert_eq!(
+        Floating::from(f64::MIN_POSITIVE / 2.0),
+        Floating::Abnormal(format!("{}", f64::MIN_POSITIVE / 2.0))
+    );
+    assert_eq!(
+        Floating::from(f32::MIN_POSITIVE / 2.0),
+        Floating::Abnormal(format!("{}", f32::MIN_POSITIVE / 2.0))
+    );
+}
+
+#[test]
+fn extremes() {
+    assert_eq!(
+        Floating::from(f64::MAX),
+        Floating::Normal {
+            exponent: 308,
+            mantissa: "17976931348623157".to_string(),
+            is_negative: false
+        }
+    );
+    assert_eq!(
+        Floating::from(f64::MIN_POSITIVE),
+        Floating::Normal {
+            exponent: -308,
+            mantissa: "22250738585072014".to_string(),
+            is_negative: false
+        }
+    );
+    assert_eq!(
+        Floating::from(f32::MAX),
+        Floating::Normal {
+            exponent: 38,
+            mantissa: "34028235".to_string(),
+            is_negative: false
+        }
+    );
+    assert_eq!(
+        Floating::from(f32::MIN_POSITIVE),
+        Floating::Normal {
+            exponent: -38,
+            mantissa: "11754944".to_string(),
+            is_negative: false
+        }
+    );
+}
+
+#[test]
+fn display_f32() {
+    assert_eq!(&format!("{}", Floating::from(1.0f32)), "1");
+    assert_eq!(&format!("{}", Floating::from(0.1f32)), "0.1");
+    assert_eq!(&format!("{}", Floating::from(-0.1f32)), "-0.1");
+    assert_eq!(&format!("{}", Floating::from(1e-10f32)), "1e-10");
+    assert_eq!(&format!("{}", Floating::from(1.2e-10f32)), "1.2e-10");
+    assert_eq!(&format!("{}", Floating::from(120.0f32)), "120");
+    assert_eq!(&format!("{}", Floating::from(123.4f32)), "123.4");
+    assert_eq!(&format!("{}", Floating::from(1.2e6f32)), "1.2e6");
+    assert_eq!(&format!("{}", Floating::from(0.0001f32)), "1e-4");
+    assert_eq!(&format!("{}", Floating::from(0.001234f32)), "0.001234");
+}
