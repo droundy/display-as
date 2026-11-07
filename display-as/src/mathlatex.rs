@@ -12,28 +12,20 @@ impl Format for Math {
     fn this_format() -> Self {
         Math
     }
-    fn escape(f: &mut Formatter, mut s: &str) -> Result<(), Error> {
-        let badstuff = "&{}#%\\~$_^";
-        while let Some(idx) = s.find(|c| badstuff.contains(c)) {
-            let (first, rest) = s.split_at(idx);
-            let (badchar, tail) = rest.split_at(1);
-            f.write_str(first)?;
-            f.write_str(match badchar {
-                "&" => r"\&",
-                "{" => r"\{",
-                "}" => r"\}",
-                "#" => r"\#",
-                "%" => r"\%",
-                "\\" => r"\backslash{}",
-                "~" => r"\tilde{}",
-                "$" => r"\$",
-                "_" => r"\_",
-                "^" => r"\hat{}",
-                _ => unreachable!(),
-            })?;
-            s = tail;
-        }
-        f.write_str(s)
+    fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {
+        escape_with(f, s, |c| match c {
+            '&' => Some(r"\&"),
+            '{' => Some(r"\{"),
+            '}' => Some(r"\}"),
+            '#' => Some(r"\#"),
+            '%' => Some(r"\%"),
+            '\\' => Some(r"\backslash{}"),
+            '~' => Some(r"\tilde{}"),
+            '$' => Some(r"\$"),
+            '_' => Some(r"\_"),
+            '^' => Some(r"\hat{}"),
+            _ => None,
+        })
     }
 }
 
