@@ -505,3 +505,94 @@ pub fn with_response_template(input: TokenStream, my_impl: TokenStream) -> Token
     let displayas_impl = with_template(input, my_impl.clone());
     displayas_impl
 }
+
+#[cfg(test)]
+mod tests {
+    use super::find_template_file;
+    use std::fs;
+    use std::panic::catch_unwind;
+    use std::path::{Path, PathBuf};
+
+    /// A scratch directory tree that is removed when dropped.
+    struct Tree(PathBuf);
+    impl Tree {
+        fn new(name: &str) -> Tree {
+            let root = std::env::temp_dir().join(format!(
+                "display-as-proc-macro-{}-{}",
+                name,
+                std::process::id()
+            ));
+            let _ = fs::remove_dir_all(&root);
+            fs::create_dir_all(&root).unwrap();
+            Tree(root)
+        }
+        fn file(&self, path: &str) {
+            let path = self.0.join(path);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, "").unwrap();
+        }
+    }
+    impl Drop for Tree {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    /// Run in the given directory (which is where the compiler runs
+    /// when it expands our macros), restoring the old one afterwards.
+    struct InDir(PathBuf);
+    impl InDir {
+        fn new(dir: &Path) -> InDir {
+            let old = std::env::current_dir().unwrap();
+            std::env::set_current_dir(dir).unwrap();
+            InDir(old)
+        }
+    }
+    impl Drop for InDir {
+        fn drop(&mut self) {
+            std::env::set_current_dir(&self.0).unwrap();
+        }
+    }
+
+    fn panic_message(find: &str) -> String {
+        let find = find.to_string();
+        let payload = catch_unwind(move || find_template_file(&find)).unwrap_err();
+        payload.downcast_ref::<String>().unwrap().clone()
+    }
+
+    // All the scenarios live in one test, because they change the
+    // working directory of the whole process.
+    #[test]
+    fn find_template_file_searches_source_directories() {
+        let tree = Tree::new("find-template-file");
+        // A template next to a Rust file is found, also via a subdirectory.
+        tree.file("src/lib.rs");
+        tree.file("src/page.html");
+        tree.file("src/sub/inner.html");
+        // A directory without any Rust files is not a source directory.
+        tree.file("docs/notes.html");
+        // The same name in two source directories is ambiguous.
+        tree.file("a/lib.rs");
+        tree.file("a/dup.html");
+        tree.file("b/lib.rs");
+        tree.file("b/dup.html");
+        // Build output is ignored, even if it contains Rust files.
+        tree.file("target/debug/gen.rs");
+        tree.file("target/debug/shared.html");
+        tree.file("target/debug/only-in-target.html");
+        tree.file("src/shared.html");
+        // The working directory itself may be a source directory.
+        tree.file("main.rs");
+        tree.file("top.html");
+
+        let _cwd = InDir::new(&tree.0);
+        assert_eq!(find_template_file("page.html"), PathBuf::from("src"));
+        assert_eq!(find_template_file("sub/inner.html"), PathBuf::from("src"));
+        assert_eq!(find_template_file("shared.html"), PathBuf::from("src"));
+        assert_eq!(find_template_file("top.html"), PathBuf::from(""));
+        assert!(panic_message("notes.html").starts_with("No template file named \"notes.html\""));
+        assert!(panic_message("only-in-target.html")
+            .starts_with("No template file named \"only-in-target.html\""));
+        assert!(panic_message("dup.html").starts_with("Multiple files named \"dup.html\""));
+    }
+}
