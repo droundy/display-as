@@ -28,7 +28,7 @@ impl Format for LaTeX {
                 "~" => r"\textasciitilde{}",
                 "$" => r"\$",
                 "_" => r"\_",
-                "^" => r"\^",
+                "^" => r"\^{}",
                 _ => unreachable!(),
             })?;
             s = tail;
@@ -51,6 +51,8 @@ fn escaping() {
         &format_as!(LaTeX, ("hello &>this is 'cool")).into_string(),
         r"hello \&>this is 'cool"
     );
+    // A bare \^ would put an accent on whatever follows.
+    assert_eq!(&format_as!(LaTeX, ("a^b^")).into_string(), r"a\^{}b\^{}");
 }
 #[test]
 fn floats() {

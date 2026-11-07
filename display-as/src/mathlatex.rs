@@ -24,11 +24,11 @@ impl Format for Math {
                 "}" => r"\}",
                 "#" => r"\#",
                 "%" => r"\%",
-                "\\" => r"\textbackslash{}",
-                "~" => r"\textasciitilde{}",
+                "\\" => r"\backslash{}",
+                "~" => r"\tilde{}",
                 "$" => r"\$",
                 "_" => r"\_",
-                "^" => r"\^",
+                "^" => r"\hat{}",
                 _ => unreachable!(),
             })?;
             s = tail;
@@ -50,6 +50,11 @@ fn escaping() {
     assert_eq!(
         &format_as!(Math, ("hello &>this is 'cool")).into_string(),
         r"hello \&>this is 'cool"
+    );
+    // Text-mode commands like \textbackslash and \^ do not work in math mode.
+    assert_eq!(
+        &format_as!(Math, ("a\\b~c^d")).into_string(),
+        r"a\backslash{}b\tilde{}c\hat{}d"
     );
 }
 #[test]
