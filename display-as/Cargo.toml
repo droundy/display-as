@@ -13,6 +13,7 @@ readme = "README.md"
 
 gotham-web = ["gotham"]
 serde1 = ["serde"]
+axum = ["axum-core"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -28,11 +29,14 @@ rouille = { version = "2.2.0", optional = true }
 actix-web = { version = "0.7.14", optional = true }
 gotham = { version = "0.5.0", optional = true }
 warp = { version = "0.3.3", optional = true }
+axum-core = { version = "0.5", default-features = false, optional = true }
 
 serde = { version = "1.0.125", features = ["derive"], optional = true }
 
 [dev-dependencies]
 criterion = "0.2"
+http-body-util = "0.1"
+futures-executor = "0.3"
 
 [[bench]]
 name = "templates-benchmark-rs"
