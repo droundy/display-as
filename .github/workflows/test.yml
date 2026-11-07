@@ -10,7 +10,6 @@ jobs:
       matrix:
         rust:
           - stable
-          - 1.54.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -23,6 +22,23 @@ jobs:
           command: check
           args: --all --all-features
 
+  msrv:
+    name: Check (MSRV)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.71.0
+          override: true
+      # Only the default features: the optional web framework features depend
+      # on crates whose latest releases need a much newer compiler.
+      - uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --all
+
   test:
     name: Test Suite
     runs-on: ubuntu-latest
@@ -30,7 +46,7 @@ jobs:
       matrix:
         rust:
           - stable
-          # - 1.54.0
+          # - 1.71.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

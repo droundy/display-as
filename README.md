@@ -37,3 +37,9 @@ distinguishes `display-as` from these other engines?
    formatted text into HTML, or
    [double-escape HTML strings](https://github.com/djc/askama/issues/108).
    
+
+## Minimum supported Rust version
+
+The minimum supported Rust version is 1.71, with default features.  The optional
+web framework features (`rouille`, `actix-web`, `gotham-web`, `warp`) depend on
+crates that may need a newer compiler.
