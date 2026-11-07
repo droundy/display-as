@@ -267,6 +267,25 @@ pub trait Format: Sync + Send + Copy + Eq + Ord + std::hash::Hash {
     fn this_format() -> Self;
 }
 
+/// Write `s` to `f`, replacing each character for which `replacement`
+/// returns `Some` by that replacement.  This is the loop shared by the
+/// escapers of the formats that escape a handful of characters.
+fn escape_with(
+    f: &mut Formatter,
+    mut s: &str,
+    replacement: impl Fn(char) -> Option<&'static str>,
+) -> Result<(), Error> {
+    while let Some((idx, c, replacement)) = s
+        .char_indices()
+        .find_map(|(idx, c)| replacement(c).map(|r| (idx, c, r)))
+    {
+        f.write_str(&s[..idx])?;
+        f.write_str(replacement)?;
+        s = &s[idx + c.len_utf8()..];
+    }
+    f.write_str(s)
+}
+
 /// This trait is analogous to [Display](std::fmt::Display), but will display the data in
 /// `F` [`Format`].
 pub trait DisplayAs<F: Format> {

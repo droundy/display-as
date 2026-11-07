@@ -6,24 +6,16 @@ use super::*;
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct HTML;
 impl Format for HTML {
-    fn escape(f: &mut Formatter, mut s: &str) -> Result<(), Error> {
-        let badstuff = "<>&\"'/";
-        while let Some(idx) = s.find(|c| badstuff.contains(c)) {
-            let (first, rest) = s.split_at(idx);
-            let (badchar, tail) = rest.split_at(1);
-            f.write_str(first)?;
-            f.write_str(match badchar {
-                "<" => "&lt;",
-                ">" => "&gt;",
-                "&" => "&amp;",
-                "\"" => "&quot;",
-                "'" => "&#x27;",
-                "/" => "&#x2f;",
-                _ => unreachable!(),
-            })?;
-            s = tail;
-        }
-        f.write_str(s)
+    fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {
+        escape_with(f, s, |c| match c {
+            '<' => Some("&lt;"),
+            '>' => Some("&gt;"),
+            '&' => Some("&amp;"),
+            '"' => Some("&quot;"),
+            '\'' => Some("&#x27;"),
+            '/' => Some("&#x2f;"),
+            _ => None,
+        })
     }
     /// The MIME type for HTML is [mime::TEXT_HTML_UTF_8].
     fn mime() -> mime::Mime {
