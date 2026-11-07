@@ -34,32 +34,39 @@ impl Format for HTML {
     }
 }
 
-macro_rules! display_as_from_display {
-    ($format:ty, $type:ty) => {
-        impl DisplayAs<$format> for $type {
-            fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-                (&self as &dyn Display).fmt(f)
-            }
-        }
-    };
-}
-
 /// Conveniently implement [DisplayAs] for integers for a new [Format].
+///
+/// ```
+/// #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+/// struct Plain;
+/// impl display_as::Format for Plain {
+///     fn escape(f: &mut ::std::fmt::Formatter, s: &str) -> Result<(), ::std::fmt::Error> {
+///         f.write_str(s) // for example I skip escaping...
+///     }
+///     fn mime() -> mime::Mime { mime::TEXT_PLAIN_UTF_8 }
+///     fn this_format() -> Self { Plain }
+/// }
+/// display_as::display_integers_as!(Plain);
+/// assert_eq!(&display_as::format_as!(Plain, 42u8 " and " -7i64).into_string(), "42 and -7");
+/// ```
 #[macro_export]
 macro_rules! display_integers_as {
+    (@impl $format:ty, $($type:ty),*) => {
+        $(
+            impl $crate::DisplayAs<$format> for $type {
+                fn fmt(
+                    &self,
+                    f: &mut ::std::fmt::Formatter,
+                ) -> ::std::result::Result<(), ::std::fmt::Error> {
+                    ::std::fmt::Display::fmt(self, f)
+                }
+            }
+        )*
+    };
     ($format:ty) => {
-        display_as_from_display!($format, i8);
-        display_as_from_display!($format, u8);
-        display_as_from_display!($format, i16);
-        display_as_from_display!($format, u16);
-        display_as_from_display!($format, i32);
-        display_as_from_display!($format, u32);
-        display_as_from_display!($format, i64);
-        display_as_from_display!($format, u64);
-        display_as_from_display!($format, i128);
-        display_as_from_display!($format, u128);
-        display_as_from_display!($format, isize);
-        display_as_from_display!($format, usize);
+        $crate::display_integers_as!(
+            @impl $format, i8, u8, i16, u16, i32, u32, i64, u64, i128, u128, isize, usize
+        );
     };
 }
 
