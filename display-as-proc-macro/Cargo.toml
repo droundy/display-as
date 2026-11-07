@@ -6,6 +6,7 @@ description = "A helper crate for display-as-template."
 repository = "https://github.com/droundy/display-as"
 license = "Apache-2.0 OR MIT"
 edition = "2018"
+rust-version = "1.88"
 
 readme = "README.md"
 
@@ -15,4 +16,3 @@ proc-macro = true
 [dependencies]
 quote = "1.0.15"
 proc-macro2 = "1.0.36"
-glob = "0.3.0"

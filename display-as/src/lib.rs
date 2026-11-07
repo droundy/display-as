@@ -435,6 +435,46 @@ pub mod warp {
     }
 }
 
+/// The `axum` feature flag makes any [`DisplayAs`] type an
+/// [axum_core::response::IntoResponse], so it can be returned directly from
+/// an [axum](https://docs.rs/axum) handler.
+#[cfg(feature = "axum")]
+pub mod axum {
+    use crate::{As, DisplayAs, Format};
+    use axum_core::response::{IntoResponse, Response};
+
+    impl<'a, F: Format, T: DisplayAs<F> + Sync> IntoResponse for As<'a, F, T> {
+        /// Convert into an axum [Response].
+        fn into_response(self) -> Response {
+            let s = format!("{}", self);
+            let m = F::mime().as_ref().to_string();
+            let mut response = Response::new(axum_core::body::Body::from(s));
+            response.headers_mut().insert(
+                "content-type",
+                m.parse().expect("mime type is a valid header value"),
+            );
+            response
+        }
+    }
+
+    #[test]
+    fn test_axum() {
+        use crate::{display, HTML};
+        use http_body_util::BodyExt;
+
+        let response = display(HTML, &"hello <world>".to_string()).into_response();
+        assert_eq!(response.status(), 200);
+        assert_eq!(
+            response.headers()["content-type"],
+            HTML::mime().as_ref()
+        );
+        let body = futures_executor::block_on(response.into_body().collect())
+            .unwrap()
+            .to_bytes();
+        assert_eq!(&body[..], b"hello &lt;world&gt;");
+    }
+}
+
 impl<F: Format> DisplayAs<F> for String {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         F::escape(f, self)
