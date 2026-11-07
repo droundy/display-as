@@ -4,21 +4,82 @@ extern crate proc_macro;
 // extern crate syn;
 #[macro_use]
 extern crate quote;
-extern crate glob;
 extern crate proc_macro2;
 
 use proc_macro::{Delimiter, Group, TokenStream, TokenTree};
+use std::collections::HashSet;
 use std::fmt::Write;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
+/// Is `dir` a linked git worktree?  Its `.git` is then a file pointing
+/// into the `.git/worktrees` directory of the repository it was made
+/// from (a submodule's `.git` file points into `.git/modules` instead).
+fn is_linked_worktree(dir: &Path) -> bool {
+    match fs::read_to_string(dir.join(".git")) {
+        Ok(contents) => contents.starts_with("gitdir:") && contents.contains("/worktrees/"),
+        Err(_) => false,
+    }
+}
+
+/// Is the directory `path` somewhere that never holds the sources of the
+/// crate being compiled, and so is not worth searching for templates?
+///
+/// That is true of hidden directories (version control and tool state,
+/// like `.git` or `.claude`), of cargo's `target` directory, which can
+/// hold tens of thousands of files that we would otherwise visit for every
+/// template, and of other git worktrees, which each hold a copy of every
+/// template.
+fn is_unsearched_dir(path: &Path) -> bool {
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy())
+        .unwrap_or_default();
+    name.starts_with('.')
+        || (name == "target" && path.with_file_name("Cargo.toml").exists())
+        || is_linked_worktree(path)
+}
+
+/// Add every directory under `dir` (including `dir` itself) that
+/// contains a Rust source file to `found`.  An empty `dir` means the
+/// current directory, and gives paths that are relative to it.
+fn collect_source_dirs(dir: &Path, found: &mut HashSet<PathBuf>) {
+    let listed = if dir.as_os_str().is_empty() {
+        Path::new(".")
+    } else {
+        dir
+    };
+    let entries = match fs::read_dir(listed) {
+        Ok(entries) => entries,
+        Err(_) => return,
+    };
+    let mut has_rust_source = false;
+    for entry in entries.flatten() {
+        let file_name = entry.file_name();
+        let name = file_name.to_string_lossy();
+        let path = dir.join(&file_name);
+        let is_dir = match entry.file_type() {
+            Ok(t) if t.is_symlink() => path.is_dir(),
+            Ok(t) => t.is_dir(),
+            Err(_) => false,
+        };
+        if is_dir {
+            if !is_unsearched_dir(&path) {
+                collect_source_dirs(&path, found);
+            }
+        } else if name.ends_with(".rs") {
+            has_rust_source = true;
+        }
+    }
+    if has_rust_source {
+        found.insert(dir.to_path_buf());
+    }
+}
+
 fn find_template_file(path: &str) -> PathBuf {
-    let sourcedirs: std::collections::HashSet<_> = glob::glob("**/*.rs").unwrap()
-        .flat_map(|x| x.ok())
-        .filter(|x| !x.starts_with("target/"))
-        .map(|x| PathBuf::from(x.clone().parent().unwrap()))
-        .collect();
+    let mut sourcedirs = HashSet::new();
+    collect_source_dirs(Path::new(""), &mut sourcedirs);
     let paths: Vec<_> = sourcedirs.into_iter()
         .filter(|d| d.join(path).exists())
         .collect();
@@ -410,6 +471,11 @@ fn template_to_statements(
 /// 1. Your filename cannot have an embedded `"` character.
 /// 2. Your string specifying the filename cannot be a "raw" string.
 /// 3. You cannot use any characters (including a backslash) that need escaping in rust strings.
+/// 4. The file is looked for in every directory containing a `.rs` file
+///    below the directory in which the compiler is running (the
+///    workspace root, when building with cargo), so no two of those
+///    directories may contain a file of that name.  Hidden directories,
+///    cargo's `target` directory and other git worktrees are not searched.
 ///
 /// These constraints are very hokey, and may be lifted in the future.
 /// File a bug report if you have a good use for lifting these
@@ -508,7 +574,8 @@ pub fn with_response_template(input: TokenStream, my_impl: TokenStream) -> Token
 
 #[cfg(test)]
 mod tests {
-    use super::find_template_file;
+    use super::{collect_source_dirs, find_template_file};
+    use std::collections::HashSet;
     use std::fs;
     use std::panic::catch_unwind;
     use std::path::{Path, PathBuf};
@@ -527,9 +594,12 @@ mod tests {
             Tree(root)
         }
         fn file(&self, path: &str) {
+            self.write(path, "");
+        }
+        fn write(&self, path: &str, contents: &str) {
             let path = self.0.join(path);
             fs::create_dir_all(path.parent().unwrap()).unwrap();
-            fs::write(path, "").unwrap();
+            fs::write(path, contents).unwrap();
         }
     }
     impl Drop for Tree {
@@ -552,6 +622,23 @@ mod tests {
         fn drop(&mut self) {
             std::env::set_current_dir(&self.0).unwrap();
         }
+    }
+
+    /// The source directories found under the root of the tree, relative to it.
+    fn source_dirs(tree: &Tree) -> Vec<String> {
+        let mut found = HashSet::new();
+        collect_source_dirs(&tree.0, &mut found);
+        let mut dirs: Vec<_> = found
+            .iter()
+            .map(|d| {
+                d.strip_prefix(&tree.0)
+                    .unwrap()
+                    .to_string_lossy()
+                    .into_owned()
+            })
+            .collect();
+        dirs.sort();
+        dirs
     }
 
     fn panic_message(find: &str) -> String {
@@ -577,6 +664,7 @@ mod tests {
         tree.file("b/lib.rs");
         tree.file("b/dup.html");
         // Build output is ignored, even if it contains Rust files.
+        tree.file("Cargo.toml");
         tree.file("target/debug/gen.rs");
         tree.file("target/debug/shared.html");
         tree.file("target/debug/only-in-target.html");
@@ -584,6 +672,12 @@ mod tests {
         // The working directory itself may be a source directory.
         tree.file("main.rs");
         tree.file("top.html");
+        // Copies of the project in other worktrees do not make names ambiguous.
+        tree.file(".claude/worktrees/one/src/lib.rs");
+        tree.file(".claude/worktrees/one/src/page.html");
+        tree.write("copies/two/.git", "gitdir: /repo/.git/worktrees/two\n");
+        tree.file("copies/two/src/lib.rs");
+        tree.file("copies/two/src/page.html");
 
         let _cwd = InDir::new(&tree.0);
         assert_eq!(find_template_file("page.html"), PathBuf::from("src"));
@@ -594,5 +688,67 @@ mod tests {
         assert!(panic_message("only-in-target.html")
             .starts_with("No template file named \"only-in-target.html\""));
         assert!(panic_message("dup.html").starts_with("Multiple files named \"dup.html\""));
+    }
+
+    #[test]
+    fn source_dirs_contain_rust_files() {
+        let tree = Tree::new("source-dirs");
+        tree.file("lib.rs");
+        tree.file("src/a/mod.rs");
+        tree.file("src/a/deep/deeper/x.rs");
+        tree.file("src/b/page.html");
+        tree.file("docs/readme.md");
+        assert_eq!(source_dirs(&tree), vec!["", "src/a", "src/a/deep/deeper"]);
+    }
+
+    #[test]
+    fn target_is_skipped_next_to_cargo_toml() {
+        let tree = Tree::new("target-dirs");
+        tree.file("Cargo.toml");
+        tree.file("src/lib.rs");
+        tree.file("target/debug/build/dep-1234/out/generated.rs");
+        tree.file("member/Cargo.toml");
+        tree.file("member/src/lib.rs");
+        tree.file("member/target/debug/build.rs");
+        assert_eq!(source_dirs(&tree), vec!["member/src", "src"]);
+    }
+
+    #[test]
+    fn source_directories_named_target_are_searched() {
+        let tree = Tree::new("target-module");
+        tree.file("Cargo.toml");
+        tree.file("src/lib.rs");
+        tree.file("src/target/mod.rs");
+        assert_eq!(source_dirs(&tree), vec!["src", "src/target"]);
+    }
+
+    #[test]
+    fn hidden_directories_are_skipped() {
+        let tree = Tree::new("hidden-dirs");
+        tree.file("src/lib.rs");
+        tree.file(".git/hooks/pre-commit.rs");
+        tree.file(".claude/scratch/src/lib.rs");
+        assert_eq!(source_dirs(&tree), vec!["src"]);
+    }
+
+    #[test]
+    fn linked_worktrees_are_skipped() {
+        let tree = Tree::new("worktrees");
+        tree.file("src/lib.rs");
+        // A worktree in a directory that is not hidden...
+        tree.write(
+            "copies/feature/.git",
+            "gitdir: /repo/.git/worktrees/feature\n",
+        );
+        tree.file("copies/feature/src/lib.rs");
+        // ... but not a submodule or a separate repository.
+        tree.write("vendor/sub/.git", "gitdir: ../../.git/modules/sub\n");
+        tree.file("vendor/sub/src/lib.rs");
+        tree.file("other/.git/HEAD");
+        tree.file("other/src/lib.rs");
+        assert_eq!(
+            source_dirs(&tree),
+            vec!["other/src", "src", "vendor/sub/src"]
+        );
     }
 }
