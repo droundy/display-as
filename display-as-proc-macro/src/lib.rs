@@ -143,9 +143,13 @@ fn count_pounds(x: &str) -> &'static str {
     ""
 }
 
-/// Use the given template to create a string.
+/// Use the given template to create a `FormattedString`.
 ///
 /// You can think of this as being kind of like `format!` on strange drugs.
+/// We return a `FormattedString` instead of a `String` so that you can store
+/// the output and use it later in another template without having the
+/// contents escaped.  To obtain a `String`, use the
+/// `FormattedString::into_string` method.
 #[proc_macro]
 pub fn format_as(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
@@ -186,7 +190,8 @@ pub fn format_as(input: TokenStream) -> TokenStream {
     .into()
 }
 
-/// Write the given template to a file.
+/// Write the given template to anything that implements `std::fmt::Write`,
+/// such as a `String`.
 ///
 /// You can think of this as being kind of like `write!` on strange drugs.
 #[proc_macro]

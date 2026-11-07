@@ -1,4 +1,4 @@
-//! Format as rust code
+//! Format as raw UTF8
 
 use super::*;
 
