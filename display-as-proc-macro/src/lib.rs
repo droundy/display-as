@@ -6,7 +6,7 @@ extern crate proc_macro;
 extern crate quote;
 extern crate proc_macro2;
 
-use proc_macro::{Delimiter, Group, TokenStream, TokenTree};
+use proc_macro::{Delimiter, Group, Spacing, TokenStream, TokenTree};
 use std::collections::HashSet;
 use std::fmt::Write;
 use std::fs::{self, File};
@@ -124,6 +124,43 @@ fn is_str(x: &TokenTree) -> bool {
         TokenTree::Literal(_) => {
             let s = x.to_string();
             s.len() > 0 && s.contains("\"") && s.chars().next() != Some('b')
+        }
+        _ => false,
+    }
+}
+
+/// Is `expr`, the Rust code collected so far, the start of an `if let`,
+/// `while let` or `for` statement that has not yet reached the `=` or `in`
+/// after its pattern?  A group in braces is then part of a struct pattern,
+/// and not the block that follows the head of the statement.
+fn in_pattern(expr: &[TokenTree]) -> bool {
+    // An `else if let` is an `if let` like any other.
+    let expr = match expr.first() {
+        Some(TokenTree::Ident(ident)) if ident.to_string() == "else" => &expr[1..],
+        _ => expr,
+    };
+    let word = |i: usize| match expr.get(i) {
+        Some(TokenTree::Ident(ident)) => ident.to_string(),
+        _ => String::new(),
+    };
+    match word(0).as_str() {
+        "if" | "while" => {
+            word(1) == "let" && expr.len() > 2 && !expr.iter().any(|t| t.to_string() == "=")
+        }
+        "for" => expr.len() > 1 && !expr.iter().any(|t| t.to_string() == "in"),
+        _ => false,
+    }
+}
+
+/// Do `toks` end with `=>`?  A group in braces after that is the body of a
+/// `match` arm, while any other group in braces in a `match` is part of a
+/// pattern or a guard.
+fn ends_with_fat_arrow(toks: &[TokenTree]) -> bool {
+    match toks {
+        [.., TokenTree::Punct(equals), TokenTree::Punct(greater)] => {
+            equals.as_char() == '='
+                && equals.spacing() == Spacing::Joint
+                && greater.as_char() == '>'
         }
         _ => false,
     }
@@ -379,13 +416,8 @@ fn template_to_statements(
         if let TokenTree::Group(g) = t.clone() {
             let next_expr_len = next_expr.len();
             if g.delimiter() == Delimiter::Brace {
-                if next_expr_len > 2
-                    && !next_expr.iter().any(|x| x.to_string() == "=")
-                    && &next_expr[0].to_string() == "if"
-                    && &next_expr[1].to_string() == "let"
-                {
-                    // We presumably are looking at a destructuring
-                    // pattern.
+                if in_pattern(&next_expr) {
+                    // We are looking at a destructuring pattern.
                     next_expr.push(t);
                 } else if next_expr_len > 1
                     && &next_expr[next_expr_len - 1].to_string() != "="
@@ -424,7 +456,9 @@ fn template_to_statements(
                     let mut interior_toks: Vec<TokenTree> = Vec::new();
                     for x in g.stream() {
                         if let TokenTree::Group(g) = x.clone() {
-                            if g.delimiter() == Delimiter::Brace {
+                            if g.delimiter() == Delimiter::Brace
+                                && ends_with_fat_arrow(&interior_toks)
+                            {
                                 interior_toks.push(TokenTree::Group(Group::new(
                                     Delimiter::Brace,
                                     template_to_statements(dir, format, g.stream(),
