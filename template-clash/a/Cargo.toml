@@ -1,0 +1,11 @@
+[package]
+name = "template-clash-a"
+version = "0.0.0"
+authors = ["David Roundy <roundyd@physics.oregonstate.edu>"]
+description = "Regression test: a template named like one in template-clash-b."
+license = "Apache-2.0 OR MIT"
+edition = "2018"
+publish = false
+
+[dependencies]
+display-as = { path = "../../display-as" }

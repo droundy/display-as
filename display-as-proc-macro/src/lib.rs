@@ -8,6 +8,7 @@ extern crate proc_macro2;
 
 use proc_macro::{Delimiter, Group, TokenStream, TokenTree};
 use std::collections::HashSet;
+use std::ffi::OsString;
 use std::fmt::Write;
 use std::fs::{self, File};
 use std::io::Read;
@@ -77,17 +78,52 @@ fn collect_source_dirs(dir: &Path, found: &mut HashSet<PathBuf>) {
     }
 }
 
-fn find_template_file(path: &str) -> PathBuf {
+/// The directory below which templates are searched for: the root of the
+/// crate being compiled, which cargo gives to rustc (and rustdoc, and
+/// rust-analyzer) as `CARGO_MANIFEST_DIR`.  Without it (when not building
+/// with cargo) we make do with the current directory, which is returned as
+/// an empty path.
+fn template_root(manifest_dir: Option<OsString>) -> PathBuf {
+    match manifest_dir {
+        Some(dir) if !dir.is_empty() => PathBuf::from(dir),
+        _ => PathBuf::new(),
+    }
+}
+
+/// The directories below `root` that contain a file named `path`.
+fn directories_with_template(root: &Path, path: &str) -> Vec<PathBuf> {
     let mut sourcedirs = HashSet::new();
-    collect_source_dirs(Path::new(""), &mut sourcedirs);
-    let paths: Vec<_> = sourcedirs.into_iter()
+    collect_source_dirs(root, &mut sourcedirs);
+    sourcedirs
+        .into_iter()
         .filter(|d| d.join(path).exists())
-        .collect();
+        .collect()
+}
+
+/// Find the directory holding the template file `path`.
+///
+/// Only the crate being compiled is searched, so that the members of a
+/// workspace can each have a template of the same name.  The crate's
+/// sources can lie outside its directory (with `#[path]`), so if nothing
+/// is found there we look below the current directory too, which under
+/// cargo is the root of the workspace.
+fn find_template_file(path: &str) -> PathBuf {
+    find_template_file_from(std::env::var_os("CARGO_MANIFEST_DIR"), path)
+}
+
+/// Like `find_template_file`, given the value of `CARGO_MANIFEST_DIR`.
+fn find_template_file_from(manifest_dir: Option<OsString>, path: &str) -> PathBuf {
+    let root = template_root(manifest_dir);
+    let mut paths = directories_with_template(&root, path);
+    if paths.is_empty() && !root.as_os_str().is_empty() {
+        paths = directories_with_template(Path::new(""), path);
+    }
     if paths.len() == 0 {
         panic!("No template file named {:?} exists.", path);
     } else if paths.len() > 1 {
         panic!(r"Multiple files named {:?} exist.  Eventually display-as will
-    support this, but for now each template file must have a unique name.", path);
+    support this, but for now each template file must have a unique name
+    within the crate.", path);
     }
     paths.into_iter().next().unwrap()
 }
@@ -472,10 +508,16 @@ fn template_to_statements(
 /// 2. Your string specifying the filename cannot be a "raw" string.
 /// 3. You cannot use any characters (including a backslash) that need escaping in rust strings.
 /// 4. The file is looked for in every directory containing a `.rs` file
-///    below the directory in which the compiler is running (the
-///    workspace root, when building with cargo), so no two of those
-///    directories may contain a file of that name.  Hidden directories,
-///    cargo's `target` directory and other git worktrees are not searched.
+///    below the root directory of the crate being compiled (the directory
+///    holding its `Cargo.toml`), so no two of those directories may
+///    contain a file of that name.  Hidden directories, cargo's `target`
+///    directory and other git worktrees are not searched.  Another crate
+///    in the same workspace may have a template of the same name.  Without
+///    cargo, the search starts in the directory in which the compiler is
+///    running.  (If nothing is found in the crate, that directory, which
+///    is the workspace root under cargo, is searched as well, for the
+///    benefit of modules that are included from outside the crate with
+///    `#[path]`.)
 ///
 /// These constraints are very hokey, and may be lifted in the future.
 /// File a bug report if you have a good use for lifting these
@@ -574,11 +616,13 @@ pub fn with_response_template(input: TokenStream, my_impl: TokenStream) -> Token
 
 #[cfg(test)]
 mod tests {
-    use super::{collect_source_dirs, find_template_file};
+    use super::{collect_source_dirs, find_template_file_from, template_root};
     use std::collections::HashSet;
+    use std::ffi::OsString;
     use std::fs;
     use std::panic::catch_unwind;
     use std::path::{Path, PathBuf};
+    use std::sync::{Mutex, MutexGuard};
 
     /// A scratch directory tree that is removed when dropped.
     struct Tree(PathBuf);
@@ -610,12 +654,16 @@ mod tests {
 
     /// Run in the given directory (which is where the compiler runs
     /// when it expands our macros), restoring the old one afterwards.
-    struct InDir(PathBuf);
+    /// The working directory is shared by all the tests, so only one at a
+    /// time can change it.
+    static CWD: Mutex<()> = Mutex::new(());
+    struct InDir(PathBuf, #[allow(dead_code)] MutexGuard<'static, ()>);
     impl InDir {
         fn new(dir: &Path) -> InDir {
+            let guard = CWD.lock().unwrap_or_else(|e| e.into_inner());
             let old = std::env::current_dir().unwrap();
             std::env::set_current_dir(dir).unwrap();
-            InDir(old)
+            InDir(old, guard)
         }
     }
     impl Drop for InDir {
@@ -641,9 +689,16 @@ mod tests {
         dirs
     }
 
-    fn panic_message(find: &str) -> String {
+    /// Look for a template as if cargo had set `CARGO_MANIFEST_DIR` to `manifest_dir`.
+    fn find_template_file(manifest_dir: Option<&Path>, find: &str) -> PathBuf {
+        find_template_file_from(manifest_dir.map(|d| d.as_os_str().to_owned()), find)
+    }
+
+    fn panic_message(manifest_dir: Option<&Path>, find: &str) -> String {
+        let manifest_dir = manifest_dir.map(|d| d.to_owned());
         let find = find.to_string();
-        let payload = catch_unwind(move || find_template_file(&find)).unwrap_err();
+        let payload =
+            catch_unwind(move || find_template_file(manifest_dir.as_deref(), &find)).unwrap_err();
         payload.downcast_ref::<String>().unwrap().clone()
     }
 
@@ -680,14 +735,14 @@ mod tests {
         tree.file("copies/two/src/page.html");
 
         let _cwd = InDir::new(&tree.0);
-        assert_eq!(find_template_file("page.html"), PathBuf::from("src"));
-        assert_eq!(find_template_file("sub/inner.html"), PathBuf::from("src"));
-        assert_eq!(find_template_file("shared.html"), PathBuf::from("src"));
-        assert_eq!(find_template_file("top.html"), PathBuf::from(""));
-        assert!(panic_message("notes.html").starts_with("No template file named \"notes.html\""));
-        assert!(panic_message("only-in-target.html")
+        assert_eq!(find_template_file(None, "page.html"), PathBuf::from("src"));
+        assert_eq!(find_template_file(None, "sub/inner.html"), PathBuf::from("src"));
+        assert_eq!(find_template_file(None, "shared.html"), PathBuf::from("src"));
+        assert_eq!(find_template_file(None, "top.html"), PathBuf::from(""));
+        assert!(panic_message(None, "notes.html").starts_with("No template file named \"notes.html\""));
+        assert!(panic_message(None, "only-in-target.html")
             .starts_with("No template file named \"only-in-target.html\""));
-        assert!(panic_message("dup.html").starts_with("Multiple files named \"dup.html\""));
+        assert!(panic_message(None, "dup.html").starts_with("Multiple files named \"dup.html\""));
     }
 
     #[test]
@@ -751,4 +806,59 @@ mod tests {
             vec!["other/src", "src", "vendor/sub/src"]
         );
     }
+
+    #[test]
+    fn template_root_is_the_manifest_dir() {
+        assert_eq!(
+            template_root(Some(OsString::from("/work/space/member"))),
+            PathBuf::from("/work/space/member")
+        );
+        // Without cargo, or without a usable value, we search from the current directory.
+        assert_eq!(template_root(None), PathBuf::new());
+        assert_eq!(template_root(Some(OsString::new())), PathBuf::new());
+    }
+
+    #[test]
+    fn only_the_crate_being_compiled_is_searched() {
+        let tree = Tree::new("workspace-members");
+        tree.file("Cargo.toml");
+        tree.file("a/Cargo.toml");
+        tree.file("a/src/lib.rs");
+        tree.file("a/src/index.html");
+        tree.file("a/src/only-a.html");
+        tree.file("b/Cargo.toml");
+        tree.file("b/src/lib.rs");
+        tree.file("b/src/index.html");
+        tree.file("b/tests/main.rs");
+        tree.file("b/tests/in-tests.html");
+        tree.file("b/examples/demo.rs");
+        tree.file("b/examples/in-examples.html");
+        tree.file("b/benches/bench.rs");
+        tree.file("b/benches/in-benches.html");
+        // Sources reached with #[path] from outside of the crate.
+        tree.file("shared/common.rs");
+        tree.file("shared/common.html");
+        let a = tree.0.join("a");
+        let b = tree.0.join("b");
+
+        // The same name in two members is not ambiguous, and gives absolute paths.
+        assert_eq!(find_template_file(Some(&a), "index.html"), a.join("src"));
+        assert_eq!(find_template_file(Some(&b), "index.html"), b.join("src"));
+        // Everything under the manifest dir is searched.
+        assert_eq!(find_template_file(Some(&b), "in-tests.html"), b.join("tests"));
+        assert_eq!(find_template_file(Some(&b), "in-examples.html"), b.join("examples"));
+        assert_eq!(find_template_file(Some(&b), "in-benches.html"), b.join("benches"));
+        assert!(panic_message(Some(&b), "only-a.html")
+            .starts_with("No template file named \"only-a.html\""));
+
+        // Without a manifest dir the whole tree is searched, as it used to be.
+        let _cwd = InDir::new(&tree.0);
+        assert!(panic_message(None, "index.html").starts_with("Multiple files named"));
+        // A template outside the crate is found from the working directory.
+        assert_eq!(
+            find_template_file(Some(&b), "common.html"),
+            PathBuf::from("shared")
+        );
+    }
 }
+
