@@ -6,11 +6,14 @@ jobs:
   check:
     name: Check
     runs-on: ubuntu-latest
+    env:
+      # Resolve dependencies to versions that support the rust-version in Cargo.toml.
+      CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS: fallback
     strategy:
       matrix:
         rust:
           - stable
-          - 1.54.0
+          - 1.88.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -30,7 +33,7 @@ jobs:
       matrix:
         rust:
           - stable
-          # - 1.54.0
+          # - 1.88.0
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

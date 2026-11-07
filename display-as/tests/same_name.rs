@@ -1,6 +1,5 @@
 //! Templates with the same file name in different directories.  Each is
-//! found next to the source file that uses it (which needs Rust 1.88 or later;
-//! before that the name has to be unique).
+//! found next to the source file that uses it.
 
 use display_as::{format_as, HTML};
 
