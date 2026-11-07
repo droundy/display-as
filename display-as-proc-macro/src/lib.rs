@@ -77,7 +77,32 @@ fn collect_source_dirs(dir: &Path, found: &mut HashSet<PathBuf>) {
     }
 }
 
+/// The directory of the source file that contains the macro invocation
+/// being expanded, if the compiler can tell us (Rust 1.88 or later).
+#[cfg(span_local_file)]
+fn invoking_dir() -> Option<PathBuf> {
+    let file = proc_macro::Span::call_site().local_file()?;
+    file.parent().map(Path::to_path_buf)
+}
+#[cfg(not(span_local_file))]
+fn invoking_dir() -> Option<PathBuf> {
+    None
+}
+
 fn find_template_file(path: &str) -> PathBuf {
+    find_template_dir(invoking_dir(), path)
+}
+
+/// Find the directory holding the template file `path`.  The generated code
+/// reads the template with `include_str!`, which looks next to the source file
+/// containing the macro, so if we know which file that is (`invoking`), that
+/// is where the template is.  Otherwise search the tree for it.
+fn find_template_dir(invoking: Option<PathBuf>, path: &str) -> PathBuf {
+    if let Some(dir) = invoking {
+        if dir.join(path).exists() {
+            return dir;
+        }
+    }
     let mut sourcedirs = HashSet::new();
     collect_source_dirs(Path::new(""), &mut sourcedirs);
     let paths: Vec<_> = sourcedirs.into_iter()
@@ -471,9 +496,11 @@ fn template_to_statements(
 /// 1. Your filename cannot have an embedded `"` character.
 /// 2. Your string specifying the filename cannot be a "raw" string.
 /// 3. You cannot use any characters (including a backslash) that need escaping in rust strings.
-/// 4. The file is looked for in every directory containing a `.rs` file
-///    below the directory in which the compiler is running (the
-///    workspace root, when building with cargo), so no two of those
+/// 4. The file is looked for next to the source file that contains the
+///    attribute, when the compiler tells us which file that is (Rust 1.88
+///    or later).  Otherwise it is looked for in every directory containing
+///    a `.rs` file below the directory in which the compiler is running
+///    (the workspace root, when building with cargo), so no two of those
 ///    directories may contain a file of that name.  Hidden directories,
 ///    cargo's `target` directory and other git worktrees are not searched.
 ///
@@ -574,7 +601,7 @@ pub fn with_response_template(input: TokenStream, my_impl: TokenStream) -> Token
 
 #[cfg(test)]
 mod tests {
-    use super::{collect_source_dirs, find_template_file};
+    use super::{collect_source_dirs, find_template_dir};
     use std::collections::HashSet;
     use std::fs;
     use std::panic::catch_unwind;
@@ -643,14 +670,14 @@ mod tests {
 
     fn panic_message(find: &str) -> String {
         let find = find.to_string();
-        let payload = catch_unwind(move || find_template_file(&find)).unwrap_err();
+        let payload = catch_unwind(move || find_template_dir(None, &find)).unwrap_err();
         payload.downcast_ref::<String>().unwrap().clone()
     }
 
     // All the scenarios live in one test, because they change the
     // working directory of the whole process.
     #[test]
-    fn find_template_file_searches_source_directories() {
+    fn find_template_dir_searches_source_directories() {
         let tree = Tree::new("find-template-file");
         // A template next to a Rust file is found, also via a subdirectory.
         tree.file("src/lib.rs");
@@ -680,14 +707,28 @@ mod tests {
         tree.file("copies/two/src/page.html");
 
         let _cwd = InDir::new(&tree.0);
-        assert_eq!(find_template_file("page.html"), PathBuf::from("src"));
-        assert_eq!(find_template_file("sub/inner.html"), PathBuf::from("src"));
-        assert_eq!(find_template_file("shared.html"), PathBuf::from("src"));
-        assert_eq!(find_template_file("top.html"), PathBuf::from(""));
+        assert_eq!(find_template_dir(None, "page.html"), PathBuf::from("src"));
+        assert_eq!(find_template_dir(None, "sub/inner.html"), PathBuf::from("src"));
+        assert_eq!(find_template_dir(None, "shared.html"), PathBuf::from("src"));
+        assert_eq!(find_template_dir(None, "top.html"), PathBuf::from(""));
         assert!(panic_message("notes.html").starts_with("No template file named \"notes.html\""));
         assert!(panic_message("only-in-target.html")
             .starts_with("No template file named \"only-in-target.html\""));
         assert!(panic_message("dup.html").starts_with("Multiple files named \"dup.html\""));
+        // A template next to the file that uses it wins over the same name elsewhere...
+        assert_eq!(
+            find_template_dir(Some(PathBuf::from("a")), "dup.html"),
+            PathBuf::from("a")
+        );
+        assert_eq!(
+            find_template_dir(Some(PathBuf::from("b")), "dup.html"),
+            PathBuf::from("b")
+        );
+        // ... and if it is not there after all, we search for it.
+        assert_eq!(
+            find_template_dir(Some(PathBuf::from("docs")), "page.html"),
+            PathBuf::from("src")
+        );
     }
 
     #[test]
