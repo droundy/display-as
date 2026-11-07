@@ -143,27 +143,33 @@ fn count_pounds(x: &str) -> &'static str {
     ""
 }
 
+/// Parse the `Format,` that starts the input of `format_as!` and
+/// `write_as!`, consuming those tokens.
+fn parse_format(
+    macro_name: &str,
+    tokens: &mut impl Iterator<Item = TokenTree>,
+) -> proc_macro2::TokenStream {
+    let format = tokens
+        .next()
+        .unwrap_or_else(|| panic!("{}! needs a Format as its first argument", macro_name));
+    match tokens.next() {
+        Some(comma) if comma.to_string() == "," => {}
+        Some(comma) => panic!(
+            "{}! needs a Format followed by a comma, not {}",
+            macro_name, comma
+        ),
+        None => panic!("{}! needs a Format followed by a comma", macro_name),
+    }
+    proc_to_two(format.into())
+}
+
 /// Use the given template to create a string.
 ///
 /// You can think of this as being kind of like `format!` on strange drugs.
 #[proc_macro]
 pub fn format_as(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
-    let format = if let Some(format) = tokens.next() {
-        proc_to_two(format.into())
-    } else {
-        panic!("format_as! needs a Format as its first argument")
-    };
-    if let Some(comma) = tokens.next() {
-        if &comma.to_string() != "," {
-            panic!(
-                "format_as! needs a Format followed by a comma, not {}",
-                comma.to_string()
-            );
-        }
-    } else {
-        panic!("format_as! needs a Format followed by a comma");
-    }
+    let format = parse_format("format_as", &mut tokens);
 
     let statements = proc_to_two(template_to_statements(
         "templates".as_ref(),
@@ -192,21 +198,7 @@ pub fn format_as(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn write_as(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
-    let format = if let Some(format) = tokens.next() {
-        proc_to_two(format.into())
-    } else {
-        panic!("write_as! needs a Format as its first argument")
-    };
-    if let Some(comma) = tokens.next() {
-        if &comma.to_string() != "," {
-            panic!(
-                "write_as! needs a Format followed by a comma, not {}",
-                comma.to_string()
-            );
-        }
-    } else {
-        panic!("write_as! needs a Format followed by a comma");
-    }
+    let format = parse_format("write_as", &mut tokens);
 
     let mut writer: Vec<TokenTree> = Vec::new();
     while let Some(tok) = tokens.next() {
@@ -288,44 +280,35 @@ fn expr_toks_to_stmt(
     expr: &mut Vec<TokenTree>,
 ) -> impl Iterator<Item = TokenTree> {
     let len = expr.len();
+    if len == 0 {
+        return two_to_proc(quote! {}).into_iter();
+    }
+
+    // An `as Format` suffix overrides the format of the template.
+    let format = if len > 2 && expr[len - 2].to_string() == "as" {
+        let format = proc_to_two(expr.pop().unwrap().into());
+        expr.pop();
+        format
+    } else {
+        format.clone()
+    };
+    let expr = proc_to_two(expr.drain(..).collect());
 
     // The ToDisplayAs type below is my hokey approach to use deref coersion
     // (which happens on method calls) ensure that either references to
     // DisplayAs types or the types themselves can be used.
-    if len > 2 && expr[len - 2].to_string() == "as" {
-        let format = proc_to_two(expr.pop().unwrap().into());
-        expr.pop();
-        let expr = proc_to_two(expr.drain(..).collect());
-        two_to_proc(quote! {
-            {
-                trait ToDisplayAs {
-                    fn #to_display_as(&self) -> &Self;
-                }
-                impl<T: DisplayAs<#format>> ToDisplayAs for T {
-                    fn #to_display_as(&self) -> &Self { self }
-                }
-                __f.write_fmt(format_args!("{}", <_ as DisplayAs<#format>>::display((#expr).#to_display_as())))?;
+    two_to_proc(quote! {
+        {
+            trait ToDisplayAs {
+                fn #to_display_as(&self) -> &Self;
             }
-        })
-        .into_iter()
-    } else if expr.len() > 0 {
-        let expr = proc_to_two(expr.drain(..).collect());
-        let format = format.clone();
-        two_to_proc(quote! {
-            {
-                trait ToDisplayAs {
-                    fn #to_display_as(&self) -> &Self;
-                }
-                impl<T: DisplayAs<#format>> ToDisplayAs for T {
-                    fn #to_display_as(&self) -> &Self { self }
-                }
-                __f.write_fmt(format_args!("{}", <_ as DisplayAs<#format>>::display((#expr).#to_display_as())))?;
+            impl<T: DisplayAs<#format>> ToDisplayAs for T {
+                fn #to_display_as(&self) -> &Self { self }
             }
-        })
-        .into_iter()
-    } else {
-        two_to_proc(quote! {}).into_iter()
-    }
+            __f.write_fmt(format_args!("{}", <_ as DisplayAs<#format>>::display((#expr).#to_display_as())))?;
+        }
+    })
+    .into_iter()
 }
 fn expr_toks_to_conditional(expr: &mut Vec<TokenTree>) -> TokenStream {
     expr.drain(..).collect()
