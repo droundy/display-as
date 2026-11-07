@@ -9,6 +9,11 @@ impl Format for Rust {
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error> {
         (&s as &dyn std::fmt::Debug).fmt(f)
     }
+    /// A `char` is displayed as a Rust character literal, such as `'a'`, in
+    /// the same way a string is displayed as a string literal.
+    fn escape_char(f: &mut Formatter, c: char) -> Result<(), Error> {
+        (&c as &dyn std::fmt::Debug).fmt(f)
+    }
     fn mime() -> mime::Mime {
         return "text/x-rust".parse().unwrap();
     }

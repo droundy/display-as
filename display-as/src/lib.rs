@@ -30,8 +30,25 @@
 //! type in different formats.  This also makes it harder to
 //! accidentally include the wrong representation in your output.
 //!
-//! Most of the primitive types already have [`DisplayAs`] implemented
-//! for the included Formats.  If you encounter a type that you wish
+//! The following standard types have [`DisplayAs`] implemented for every
+//! [`Format`] (and references to them work too, to any depth):
+//!
+//! * `String`, `str`, and the string-like `Cow<str>`, `Box<str>`,
+//!   `Rc<str>` and `Arc<str>`.  These are escaped for the format.
+//! * `char`, which is escaped like a one-character string.  In [`Rust`] it
+//!   is a character literal such as `'a'`.
+//! * `bool`, which is displayed as `true` or `false` in every format.  It
+//!   is never escaped, so in [`Rust`] it is a `bool` literal rather than a
+//!   quoted string.
+//! * Integers and floating-point numbers, for the built-in formats.
+//! * `Box<T>`, `Rc<T>`, `Arc<T>` and other smart pointers to any sized type
+//!   that implements [`DisplayAs`].
+//!
+//! There is deliberately no implementation for `Vec`, `Option` or tuples,
+//! because there is no format-neutral way to display them: use a loop or
+//! `match` in your template instead.
+//!
+//! If you encounter another type that you wish
 //! had [`DisplayAs`] implemented for a given format, just let me know.
 //! You can manually implement [`DisplayAs`] for any of your own types
 //! (it's not worse than implementing [Display](std::fmt::Display)) but that isn't how
@@ -261,6 +278,16 @@ pub trait Format: Sync + Send + Copy + Eq + Ord + std::hash::Hash {
     /// have any internal formatting, and must be displayed
     /// appropriately.
     fn escape(f: &mut Formatter, s: &str) -> Result<(), Error>;
+    /// "Escape" a single character so it can be safely displayed in this
+    /// format.
+    ///
+    /// The default treats the character as a one-character string and
+    /// passes it to [`Format::escape`], without allocating.  A format in
+    /// which a character is not just a short string (such as [`Rust`],
+    /// where it is a `'a'` literal) can override this.
+    fn escape_char(f: &mut Formatter, c: char) -> Result<(), Error> {
+        Self::escape(f, c.encode_utf8(&mut [0; 4]))
+    }
     /// The mime type of this format.
     fn mime() -> mime::Mime;
     /// Return an actual [`Format`] for use in [`As`] below.
@@ -512,6 +539,44 @@ impl<F: Format> DisplayAs<F> for str {
 impl<'a, F: Format> DisplayAs<F> for &'a str {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         F::escape(f, self)
+    }
+}
+// The following string-like types cannot rely on the auto-deref that
+// `format_as!` uses to find a `DisplayAs` impl, because that needs a `Sized`
+// type and `str` is not one.
+impl<'a, F: Format> DisplayAs<F> for std::borrow::Cow<'a, str> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        F::escape(f, self)
+    }
+}
+impl<F: Format> DisplayAs<F> for Box<str> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        F::escape(f, self)
+    }
+}
+impl<F: Format> DisplayAs<F> for std::rc::Rc<str> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        F::escape(f, self)
+    }
+}
+impl<F: Format> DisplayAs<F> for std::sync::Arc<str> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        F::escape(f, self)
+    }
+}
+/// A `bool` is displayed as `true` or `false` in every format.  It is written
+/// as is rather than being passed to [`Format::escape`], since that would
+/// quote it in [`Rust`], and the words contain nothing that needs escaping.
+impl<F: Format> DisplayAs<F> for bool {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        f.write_str(if *self { "true" } else { "false" })
+    }
+}
+/// A `char` is escaped like a one-character string, via
+/// [`Format::escape_char`].
+impl<F: Format> DisplayAs<F> for char {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        F::escape_char(f, *self)
     }
 }
 
