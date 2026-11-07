@@ -44,4 +44,6 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all
+          # With all features, so that the tests of the web framework
+          # features (test_warp, test_axum) run too.
+          args: --all --all-features
