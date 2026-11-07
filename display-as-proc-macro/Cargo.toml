@@ -16,4 +16,3 @@ proc-macro = true
 [dependencies]
 quote = "1.0.15"
 proc-macro2 = "1.0.36"
-rand = "0.8.3"

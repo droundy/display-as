@@ -242,33 +242,56 @@ pub fn write_as(input: TokenStream) -> TokenStream {
     .into()
 }
 
+/// A deterministic 64-bit hash (FNV-1a) of a template.
+///
+/// We deliberately do not use `std::collections::hash_map::DefaultHasher`
+/// (whose algorithm is not guaranteed to stay the same between Rust
+/// releases) or anything random: the generated code must be identical every
+/// time we are given the same input, so that builds are reproducible and
+/// incremental compilation is not defeated.
+fn hash_template(template: &str) -> u64 {
+    let mut hash: u64 = 0xcbf29ce484222325;
+    for b in template.bytes() {
+        hash ^= u64::from(b);
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    hash
+}
+
+/// The name of the helper method used by `expr_toks_to_stmt` for the
+/// template `template` (the tokens of one level of a template: the whole
+/// input of the macro, or a sub-template such as the body of a `let x = {
+/// ... };`, a `match` arm or an `include!`d file).
+///
+/// The name needs to be unique among nested calls to `format_as!`.  If an
+/// expression in a template contains a nested `format_as!`, both the outer
+/// helper trait and the inner one are in scope for the inner expressions,
+/// and two methods with the same name would be ambiguous.  The tokens of a
+/// nested invocation are strictly fewer than (and a part of) those of the
+/// invocation containing it, so a hash of the template tokens differs for
+/// every level of nesting.  Sibling expressions in one template are never
+/// nested in each other, so they may share a name.
+fn to_display_as_name(
+    format: &proc_macro2::TokenStream,
+    template: &TokenStream,
+) -> proc_macro2::Ident {
+    let hash = hash_template(&template.to_string());
+    proc_macro2::Ident::new(
+        &format!("ToDisplayAs{}xxx{:016x}", format, hash),
+        proc_macro2::Span::call_site(),
+    )
+}
+
 fn expr_toks_to_stmt(
+    to_display_as: &proc_macro2::Ident,
     format: &proc_macro2::TokenStream,
     expr: &mut Vec<TokenTree>,
 ) -> impl Iterator<Item = TokenTree> {
     let len = expr.len();
 
-    let to_display_as = {
-        // We generate a unique method name to avoid a bug that happens if
-        // there are nested calls to format_as!.  The ToDisplayAs type below
-        // is my hokey approach to use deref coersion (which happens on method
-        // calls) ensure that either references to DisplayAs types or the types
-        // themselves can be used.
-        use rand::distributions::Alphanumeric;
-        use rand::{thread_rng, Rng};
-        use std::iter;
-
-        let mut rng = thread_rng();
-        let rand_chars: String = iter::repeat(())
-            .map(|()| rng.sample(Alphanumeric))
-            .map(char::from)
-            .take(13)
-            .collect();
-        proc_macro2::Ident::new(
-            &format!("ToDisplayAs{}xxx{}", format, rand_chars),
-            proc_macro2::Span::call_site(),
-        )
-    };
+    // The ToDisplayAs type below is my hokey approach to use deref coersion
+    // (which happens on method calls) ensure that either references to
+    // DisplayAs types or the types themselves can be used.
     if len > 2 && expr[len - 2].to_string() == "as" {
         let format = proc_to_two(expr.pop().unwrap().into());
         expr.pop();
@@ -351,6 +374,7 @@ fn template_to_statements(
 {
     let mut toks: Vec<TokenTree> = Vec::new();
     let mut next_expr: Vec<TokenTree> = Vec::new();
+    let to_display_as = to_display_as_name(format, &template);
     for t in template.into_iter() {
         if let TokenTree::Group(g) = t.clone() {
             let next_expr_len = next_expr.len();
@@ -452,7 +476,7 @@ fn template_to_statements(
             toks.push(t);
         } else if is_str(&t) {
             // First print the previous expression...
-            toks.extend(expr_toks_to_stmt(&format, &mut next_expr));
+            toks.extend(expr_toks_to_stmt(&to_display_as, &format, &mut next_expr));
             // Now we print this str...
             toks.extend(to_tokens("__f.write_str"));
             toks.push(TokenTree::Group(Group::new(
@@ -465,7 +489,7 @@ fn template_to_statements(
         }
     }
     // Now print the final expression...
-    toks.extend(expr_toks_to_stmt(&format, &mut next_expr));
+    toks.extend(expr_toks_to_stmt(&to_display_as, &format, &mut next_expr));
     TokenTree::Group(Group::new(Delimiter::Brace, toks.into_iter().collect())).into()
 }
 
