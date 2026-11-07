@@ -119,11 +119,26 @@ fn two_to_proc(i: proc_macro2::TokenStream) -> TokenStream {
     i.into()
 }
 
+/// Is `x` a string literal (normal or raw), as opposed to a byte string, a
+/// character literal such as `'"'`, or a number?
 fn is_str(x: &TokenTree) -> bool {
     match x {
         TokenTree::Literal(_) => {
             let s = x.to_string();
-            s.len() > 0 && s.contains("\"") && s.chars().next() != Some('b')
+            s.starts_with('"') || s.starts_with("r\"") || s.starts_with("r#")
+        }
+        _ => false,
+    }
+}
+
+/// Is `expr`, the Rust code collected since the last template string or
+/// statement, the start of an `if`, `while`, `for`, `match` or `let` (or of an
+/// `else if`)?  If so, a string literal that follows is part of that Rust code
+/// (a condition, an iterator or an initial value) rather than template text.
+fn starts_statement(expr: &[TokenTree]) -> bool {
+    match expr.first() {
+        Some(TokenTree::Ident(ident)) => {
+            ["if", "while", "for", "match", "let", "else"].contains(&ident.to_string().as_str())
         }
         _ => false,
     }
@@ -474,7 +489,7 @@ fn template_to_statements(
         } else if t.to_string() == ";" {
             toks.extend(expr_toks_to_conditional(&mut next_expr).into_iter());
             toks.push(t);
-        } else if is_str(&t) {
+        } else if is_str(&t) && !starts_statement(&next_expr) {
             // First print the previous expression...
             toks.extend(expr_toks_to_stmt(&to_display_as, &format, &mut next_expr));
             // Now we print this str...

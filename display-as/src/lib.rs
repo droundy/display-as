@@ -92,6 +92,23 @@
 //!            "Counting 1...\nCounting 2...\nCounting 3...\nBlast off!");
 //! ```
 //!
+//! In the head of an `if`, `while`, `for`, `match` or `let` (the condition,
+//! the iterator, or the initial value of a variable) a string literal is
+//! ordinary Rust.  Anywhere else a string literal is template text, so to
+//! display a string value that you write inline, put it in parentheses.
+//!
+//! ```
+//! use display_as::{HTML, format_as};
+//! let name = "Alice";
+//! assert_eq!(&format_as!(HTML,
+//!                        if name == "Alice" {
+//!                            "Welcome back, " name "!"
+//!                        } else {
+//!                            "Hello, stranger."
+//!                        }).into_string(),
+//!            "Welcome back, Alice!");
+//! ```
+//!
 //! ### Semicolons
 //!
 //! You may also play any rust statements you wish, if you end them
