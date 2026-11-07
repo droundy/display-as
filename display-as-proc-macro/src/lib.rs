@@ -6,7 +6,7 @@ extern crate proc_macro;
 extern crate quote;
 extern crate proc_macro2;
 
-use proc_macro::{Delimiter, Group, TokenStream, TokenTree};
+use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 use std::collections::HashSet;
 use std::fmt::Write;
 use std::fs::{self, File};
@@ -129,6 +129,134 @@ fn is_str(x: &TokenTree) -> bool {
     }
 }
 
+/// An invocation of `compile_error!` with the given message, reported at
+/// `span`.  Unlike a panic this shows up as an ordinary compiler error.
+/// `item` says that the result is used as an item, which needs a trailing
+/// semicolon.
+fn compile_error(span: Span, message: &str, item: bool) -> TokenStream {
+    let mut literal = Literal::string(message);
+    literal.set_span(span);
+    let mut arguments = Group::new(Delimiter::Parenthesis, TokenTree::Literal(literal).into());
+    arguments.set_span(span);
+    let mut bang = Punct::new('!', Spacing::Alone);
+    bang.set_span(span);
+    let mut tokens = vec![
+        TokenTree::Ident(Ident::new("compile_error", span)),
+        TokenTree::Punct(bang),
+        TokenTree::Group(arguments),
+    ];
+    if item {
+        let mut semicolon = Punct::new(';', Spacing::Alone);
+        semicolon.set_span(span);
+        tokens.push(TokenTree::Punct(semicolon));
+    }
+    tokens.into_iter().collect()
+}
+
+/// How the token `t`, which follows `prev`, changes the nesting depth of
+/// angle brackets (as in `Format<A, B>`).  The `>` of `->` and `=>` does not
+/// close anything.
+fn angle_delta(prev: Option<&TokenTree>, t: &TokenTree) -> isize {
+    match t {
+        TokenTree::Punct(p) if p.as_char() == '<' => 1,
+        TokenTree::Punct(p) if p.as_char() == '>' => match prev {
+            Some(TokenTree::Punct(q))
+                if q.spacing() == Spacing::Joint && (q.as_char() == '-' || q.as_char() == '=') =>
+            {
+                0
+            }
+            _ => -1,
+        },
+        _ => 0,
+    }
+}
+
+/// Take the format off the front of the arguments of `format_as!` or
+/// `write_as!`: every token up to the first comma that is not inside
+/// angle brackets, so that it may be a path such as `display_as::HTML`.
+/// The comma is consumed.
+fn take_format(
+    macro_name: &str,
+    tokens: &mut impl Iterator<Item = TokenTree>,
+) -> Result<proc_macro2::TokenStream, TokenStream> {
+    let mut format: Vec<TokenTree> = Vec::new();
+    let mut depth: isize = 0;
+    loop {
+        let t = match tokens.next() {
+            Some(t) => t,
+            None => {
+                return Err(compile_error(
+                    Span::call_site(),
+                    &format!("{} needs a Format followed by a comma", macro_name),
+                    false,
+                ))
+            }
+        };
+        if depth <= 0 && matches!(&t, TokenTree::Punct(p) if p.as_char() == ',') {
+            break;
+        }
+        depth += angle_delta(format.last(), &t);
+        format.push(t);
+    }
+    if format.is_empty() {
+        return Err(compile_error(
+            Span::call_site(),
+            &format!("{} needs a Format as its first argument", macro_name),
+            false,
+        ));
+    }
+    Ok(proc_to_two(format.into_iter().collect()))
+}
+
+/// The index of the `>` that closes the `<` at `toks[open]`.
+fn matching_angle(toks: &[TokenTree], open: usize) -> Option<usize> {
+    let mut depth: isize = 0;
+    for i in open..toks.len() {
+        depth += angle_delta(if i > 0 { Some(&toks[i - 1]) } else { None }, &toks[i]);
+        if depth == 0 {
+            return Some(i);
+        }
+    }
+    None
+}
+
+/// The names (including lifetimes, without their quote) of the generic
+/// parameters in `generics`, the tokens between the angle brackets of
+/// `impl<...>`.
+fn generic_param_names(generics: &[TokenTree]) -> Vec<String> {
+    let mut names = Vec::new();
+    let mut depth: isize = 0;
+    let mut expect_param = true;
+    for (i, t) in generics.iter().enumerate() {
+        depth += angle_delta(if i > 0 { Some(&generics[i - 1]) } else { None }, t);
+        match t {
+            TokenTree::Punct(p) if depth == 0 && p.as_char() == ',' => expect_param = true,
+            TokenTree::Ident(id) if expect_param && id.to_string() != "const" => {
+                names.push(id.to_string());
+                expect_param = false;
+            }
+            _ => (),
+        }
+    }
+    names
+}
+
+/// The first identifier in `toks` (searching groups too) that is one of `names`.
+fn find_ident(toks: impl Iterator<Item = TokenTree>, names: &[String]) -> Option<TokenTree> {
+    for t in toks {
+        match &t {
+            TokenTree::Ident(id) if names.contains(&id.to_string()) => return Some(t),
+            TokenTree::Group(g) => {
+                if let Some(found) = find_ident(g.stream().into_iter(), names) {
+                    return Some(found);
+                }
+            }
+            _ => (),
+        }
+    }
+    None
+}
+
 fn to_tokens(s: &str) -> impl Iterator<Item = TokenTree> {
     let ts: TokenStream = s.parse().unwrap();
     ts.into_iter()
@@ -149,21 +277,10 @@ fn count_pounds(x: &str) -> &'static str {
 #[proc_macro]
 pub fn format_as(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
-    let format = if let Some(format) = tokens.next() {
-        proc_to_two(format.into())
-    } else {
-        panic!("format_as! needs a Format as its first argument")
+    let format = match take_format("format_as!", &mut tokens) {
+        Ok(format) => format,
+        Err(error) => return error,
     };
-    if let Some(comma) = tokens.next() {
-        if &comma.to_string() != "," {
-            panic!(
-                "format_as! needs a Format followed by a comma, not {}",
-                comma.to_string()
-            );
-        }
-    } else {
-        panic!("format_as! needs a Format followed by a comma");
-    }
 
     let statements = proc_to_two(template_to_statements(
         "templates".as_ref(),
@@ -192,21 +309,10 @@ pub fn format_as(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn write_as(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
-    let format = if let Some(format) = tokens.next() {
-        proc_to_two(format.into())
-    } else {
-        panic!("write_as! needs a Format as its first argument")
+    let format = match take_format("write_as!", &mut tokens) {
+        Ok(format) => format,
+        Err(error) => return error,
     };
-    if let Some(comma) = tokens.next() {
-        if &comma.to_string() != "," {
-            panic!(
-                "write_as! needs a Format followed by a comma, not {}",
-                comma.to_string()
-            );
-        }
-    } else {
-        panic!("write_as! needs a Format followed by a comma");
-    }
 
     let mut writer: Vec<TokenTree> = Vec::new();
     while let Some(tok) = tokens.next() {
@@ -249,9 +355,11 @@ pub fn write_as(input: TokenStream) -> TokenStream {
 /// releases) or anything random: the generated code must be identical every
 /// time we are given the same input, so that builds are reproducible and
 /// incremental compilation is not defeated.
-fn hash_template(template: &str) -> u64 {
+fn hash_template(format: &str, template: &str) -> u64 {
     let mut hash: u64 = 0xcbf29ce484222325;
-    for b in template.bytes() {
+    // 0xff is not part of any UTF-8 string, so it cannot be confused with
+    // the end of the format.
+    for b in format.bytes().chain(Some(0xff)).chain(template.bytes()) {
         hash ^= u64::from(b);
         hash = hash.wrapping_mul(0x100000001b3);
     }
@@ -262,6 +370,10 @@ fn hash_template(template: &str) -> u64 {
 /// template `template` (the tokens of one level of a template: the whole
 /// input of the macro, or a sub-template such as the body of a `let x = {
 /// ... };`, a `match` arm or an `include!`d file).
+///
+/// The name is made of a hash of the format as well as of the template,
+/// and never of the characters of the format, since the format may be a path
+/// such as `display_as::HTML`, which is not part of any identifier.
 ///
 /// The name needs to be unique among nested calls to `format_as!`.  If an
 /// expression in a template contains a nested `format_as!`, both the outer
@@ -275,9 +387,9 @@ fn to_display_as_name(
     format: &proc_macro2::TokenStream,
     template: &TokenStream,
 ) -> proc_macro2::Ident {
-    let hash = hash_template(&template.to_string());
+    let hash = hash_template(&format.to_string(), &template.to_string());
     proc_macro2::Ident::new(
-        &format!("ToDisplayAs{}xxx{:016x}", format, hash),
+        &format!("ToDisplayAsxxx{:016x}", hash),
         proc_macro2::Span::call_site(),
     )
 }
@@ -287,13 +399,27 @@ fn expr_toks_to_stmt(
     format: &proc_macro2::TokenStream,
     expr: &mut Vec<TokenTree>,
 ) -> impl Iterator<Item = TokenTree> {
-    let len = expr.len();
+    // An expression ending in `as Format`, where the format may be a path,
+    // is displayed as that format.
+    let mut format_start = expr.len();
+    while format_start > 0
+        && match &expr[format_start - 1] {
+            TokenTree::Ident(id) => id.to_string() != "as",
+            TokenTree::Punct(p) => p.as_char() == ':',
+            _ => false,
+        }
+    {
+        format_start -= 1;
+    }
+    let has_as = format_start > 1
+        && format_start < expr.len()
+        && expr[format_start - 1].to_string() == "as";
 
     // The ToDisplayAs type below is my hokey approach to use deref coersion
     // (which happens on method calls) ensure that either references to
     // DisplayAs types or the types themselves can be used.
-    if len > 2 && expr[len - 2].to_string() == "as" {
-        let format = proc_to_two(expr.pop().unwrap().into());
+    if has_as {
+        let format = proc_to_two(expr.drain(format_start..).collect());
         expr.pop();
         let expr = proc_to_two(expr.drain(..).collect());
         two_to_proc(quote! {
@@ -499,6 +625,11 @@ fn template_to_statements(
 /// format we want to implement, and we might want to also use
 /// additional generic bounds.
 ///
+/// The format being implemented may be given as a path, as in
+/// `impl DisplayAs<display_as::HTML> for T {}`.  It must be a concrete type:
+/// a generic format, as in `impl<F: Format> DisplayAs<F> for T {}`, is not
+/// supported, and is reported as an error.
+///
 /// You may use `with_template` in two different ways: inline or with
 /// a separate template file.  To use an inline template, you provide
 /// your template as an argument, as in `#[with_template("Vec(" self.x
@@ -545,13 +676,48 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
     if &impl_toks[0].to_string() != "impl" || impl_toks.len() < 3 {
         panic!("with_template can only be applied to an impl of DisplayAs");
     }
-    let mut my_format: proc_macro2::TokenStream = quote!();
-    for i in 0..impl_toks.len() - 2 {
+    // The generics of the impl, as in `impl<F: Format>`, are skipped so that
+    // we find the `DisplayAs` that is being implemented.
+    let mut generics: Vec<String> = Vec::new();
+    let mut start = 1;
+    if impl_toks[1].to_string() == "<" {
+        match matching_angle(&impl_toks, 1) {
+            Some(close) => {
+                generics = generic_param_names(&impl_toks[2..close]);
+                start = close + 1;
+            }
+            None => return compile_error(Span::call_site(), "unbalanced < in impl", true),
+        }
+    }
+    let mut format_toks: Vec<TokenTree> = Vec::new();
+    for i in start..impl_toks.len() - 1 {
         if impl_toks[i].to_string() == "DisplayAs" && impl_toks[i + 1].to_string() == "<" {
-            my_format = proc_to_two(impl_toks[i + 2].clone().into());
+            if let Some(close) = matching_angle(&impl_toks, i + 1) {
+                format_toks = impl_toks[i + 2..close].to_vec();
+            }
             break;
         }
     }
+    if format_toks.is_empty() {
+        return compile_error(
+            Span::call_site(),
+            "with_template can only be applied to an impl of DisplayAs<Format>",
+            true,
+        );
+    }
+    if let Some(param) = find_ident(format_toks.iter().cloned(), &generics) {
+        return compile_error(
+            param.span(),
+            &format!(
+                "with_template does not support a generic format: `{}` is a generic \
+                 parameter, but the format must be a concrete type such as `HTML` or \
+                 `display_as::HTML`",
+                param
+            ),
+            true,
+        );
+    }
+    let my_format = proc_to_two(format_toks.into_iter().collect());
     let last = impl_toks.pop().unwrap();
     match last.to_string().as_ref() {
         "{  }" | "{ }" | "{}" => (), // this is what we expect.
@@ -560,7 +726,6 @@ pub fn with_template(input: TokenStream, my_impl: TokenStream) -> TokenStream {
             s
         ),
     };
-    let my_format = my_format; // no longer mut
 
     let input_vec: Vec<_> = input.clone().into_iter().collect();
     let mut left_delim = "".to_string();

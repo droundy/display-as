@@ -50,6 +50,27 @@
 //! documentation.  But in practice you will most likely primarily use
 //! the [with_template] attribute.
 //!
+//! The format may also be given as a path, such as
+//! `format_as!(display_as::HTML, "hello")`, which is handy when you
+//! have not imported it, or when two formats have the same name.  It
+//! must be a concrete type: a generic format, as in
+//! `fn f<F: Format>() { format_as!(F, ...) }` or
+//! `impl<F: Format> DisplayAs<F> for T`, is not supported (the
+//! attribute [`with_template`] reports that as an error).
+//!
+//! ```
+//! use display_as::format_as;
+//! assert_eq!(&format_as!(display_as::HTML, "Treat this literally <" ("<")).into_string(),
+//!            "Treat this literally <&lt;");
+//! ```
+//!
+//! ```compile_fail
+//! use display_as::{DisplayAs, Format, with_template};
+//! struct T;
+//! #[with_template("hello")]
+//! impl<F: Format> DisplayAs<F> for T {}
+//! ```
+//!
 //! ### String literals
 //!
 //! The first thing you can include in a template is a string literal,
@@ -115,6 +136,8 @@
 //! assert_eq!(&format_as!(HTML, "The number $" 1.2e12 as Math "$").into_string(),
 //!            r"The number $1.2\times10^{12}$");
 //! ```
+//!
+//! The format after `as` may also be a path, as in `as display_as::Math`.
 //!
 //! ### Saving a portion of a template for reuse
 //!
