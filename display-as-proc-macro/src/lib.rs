@@ -185,7 +185,8 @@ pub fn format_as(input: TokenStream) -> TokenStream {
         {
             use std::fmt::Write;
             use display_as::DisplayAs;
-            let doit = || -> Result<String, std::fmt::Error> {
+            // The template may change variables that it uses (as in write_as!).
+            let mut doit = || -> Result<String, std::fmt::Error> {
                 let mut __f = String::with_capacity(32);
                 #statements
                 Ok(__f)
