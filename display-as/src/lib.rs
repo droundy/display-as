@@ -62,7 +62,7 @@
 //! to get a string out of one or more [`DisplayAs`] objects, you will
 //! use something like `format_as!(HTML, "hello world" value).into_string()`.  If
 //! you want to implement [`DisplayAs`], you will use the attribute
-//! [`with_template!`].  In these examples I will use
+//! [`with_template`].  In these examples I will use
 //! [`format_as!`] because that makes it easy to write testable
 //! documentation.  But in practice you will most likely primarily use
 //! the [with_template] attribute.
@@ -233,22 +233,8 @@ extern crate display_as_proc_macro;
 extern crate mime;
 extern crate self as display_as;
 
-/// Use the given template to create a [`FormattedString`].
-///
-/// You can think of this as being kind of like [`format!`] on strange drugs.
-/// We return a [`FormattedString`] instaed of a [String] so that
-/// You can store the output and use it later in another template without
-/// having the contents escaped.
-///
-/// To obtain a [`String`], use the [`FormattedString::into_string`] method.
 pub use display_as_proc_macro::format_as;
-
-/// Write the given template to a file.
-///
-/// You can think of this as being kind of like [`write!`] on strange drugs.
 pub use display_as_proc_macro::write_as;
-
-/// Can I write doc here?
 pub use display_as_proc_macro::with_template;
 
 use std::fmt::{Display, Error, Formatter};
@@ -313,7 +299,7 @@ fn escape_with(
     f.write_str(s)
 }
 
-/// This trait is analogous to [Display](std::fmt::Display), but will display the data in
+/// This trait is analogous to [`Display`], but will display the data in
 /// `F` [`Format`].
 pub trait DisplayAs<F: Format> {
     /// Formats the value using the given formatter.
@@ -379,7 +365,7 @@ fn test_closure() {
     );
 }
 
-/// Choose to [Display](std::fmt::Display) this type using a particular [`Format`] `F`.
+/// Choose to [`Display`] this type using a particular [`Format`] `F`.
 pub struct As<'a, F: Format, T: DisplayAs<F> + ?Sized> {
     inner: &'a T,
     _format: F,
@@ -399,7 +385,7 @@ impl<'a, F: Format, T: DisplayAs<F> + ?Sized> Display for As<'a, F, T> {
 }
 
 /// The `rouille` feature flag enables conversion of any `As<F,T>`
-/// type into a [rouille::Response].  Note that it is necessary to be
+/// type into a [::rouille::Response].  Note that it is necessary to be
 /// explicit about the format because a given type `T` may be
 /// displayed in multiple different formats.
 #[cfg(feature = "rouille")]
@@ -454,7 +440,7 @@ pub mod gotham {
     }
 }
 
-/// The `warp` feature flag makes any [`DisplayAs`] type a [warp::Reply].
+/// The `warp` feature flag makes any [`DisplayAs`] type a [::warp::Reply].
 #[cfg(feature = "warp")]
 pub mod warp {
     use crate::{As, DisplayAs, Format};
