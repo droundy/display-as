@@ -17,7 +17,8 @@ cargo test --all                          # CI test job (unit, integration tests
 cargo check --all --all-features          # CI check job; run on stable and on the MSRV, Rust 1.88.0 (`rust-version` in both Cargo.toml files)
 cargo test -p display-as --test with_template   # one integration test file
 cargo test -p display-as --test with_template foo   # one test by name
-cargo bench -p display-as                 # criterion benches in display-as/benches
+cargo bench -p display-as                 # all benches in display-as/benches (criterion and scaling)
+cargo bench -p display-as --bench scaling # how render time scales with input size (`scaling` crate, ~15 s)
 scripts/check-reproducible.sh             # macro output must be deterministic: two builds give identical binaries
 ```
 

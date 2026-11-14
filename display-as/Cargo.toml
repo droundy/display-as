@@ -38,7 +38,12 @@ serde = { version = "1.0.125", features = ["derive"], optional = true }
 criterion = "0.2"
 http-body-util = "0.1"
 futures-executor = "0.3"
+scaling = "0.10.2"
 
 [[bench]]
 name = "templates-benchmark-rs"
+harness = false
+
+[[bench]]
+name = "scaling"
 harness = false
