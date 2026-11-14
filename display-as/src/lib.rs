@@ -150,6 +150,24 @@
 //!            "The number 1 is silly number 1");
 //! ```
 //!
+//! ## Templates that work in any format
+//!
+//! The format given to `format_as!`, `write_as!` and `#[with_template]` may be
+//! a generic parameter, so a piece of output can be written once and rendered
+//! in whatever [`Format`] the caller asks for.  Every type used in the
+//! template must then implement [`DisplayAs`]`<F>` for all `F` (as `String`
+//! and `&str` do); the numeric types are implemented only for the formats in
+//! this crate.
+//!
+//! ```
+//! use display_as::{DisplayAs, Format, FormattedString, HTML, UTF8, format_as};
+//! fn greeting<F: Format>(name: &str) -> FormattedString<F> {
+//!     format_as!(F, "Hello, " name "!")
+//! }
+//! assert_eq!(greeting::<HTML>("R&D").into_string(), "Hello, R&amp;D!");
+//! assert_eq!(greeting::<UTF8>("R&D").into_string(), "Hello, R&D!");
+//! ```
+//!
 //! ## Differences when putting a template in a file
 //!
 //! You will most likely always put largish templates in a separate
@@ -316,6 +334,25 @@ pub trait DisplayAs<F: Format> {
     }
 }
 
+/// The helper that the template macros use to accept either a value or a
+/// reference to one.
+///
+/// Calling `x.__to_display_as(PhantomData::<F>)` autoderefs `x` until it finds something
+/// that is `DisplayAs<F>`.  This is a generic trait here, rather than a
+/// trait declared in each macro expansion, so that the format `F` may be a
+/// generic parameter of the function containing the template.
+#[doc(hidden)]
+pub trait ToDisplayAs<F: Format> {
+    /// Returns `self`.  The argument only tells the compiler which `F` is
+    /// meant, since the other types do not mention it.
+    fn __to_display_as(&self, _format: std::marker::PhantomData<F>) -> &Self;
+}
+impl<F: Format, T: DisplayAs<F>> ToDisplayAs<F> for T {
+    fn __to_display_as(&self, _format: std::marker::PhantomData<F>) -> &Self {
+        self
+    }
+}
+
 /// Create a Display object, which can be used with various web frameworks.
 pub fn display<'a, F: Format, T: DisplayAs<F>>(_f: F, x: &'a T) -> As<'a, F, T> {
     x.display()
@@ -333,6 +370,19 @@ pub fn display_closure_as<F: Format>(
     c: impl Fn(&mut Formatter) -> Result<(), Error>,
 ) -> impl DisplayAs<F> {
     Closure { f: c, _format: f }
+}
+/// Like [`display_closure_as`], but takes the format as a type parameter,
+/// which is also usable when the format is a generic parameter `F`.
+///
+/// This is used internally in template handling.
+#[doc(hidden)]
+pub fn display_closure_as_in<F: Format, C: Fn(&mut Formatter) -> Result<(), Error>>(
+    c: C,
+) -> impl DisplayAs<F> {
+    Closure {
+        f: c,
+        _format: F::this_format(),
+    }
 }
 impl<F: Format, C: Fn(&mut Formatter) -> Result<(), Error>> DisplayAs<F> for Closure<F, C> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
